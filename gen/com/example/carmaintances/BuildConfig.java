@@ -1,5 +1,5 @@
 /** Automatically generated file. DO NOT MODIFY */
-package com.leonliu.cm;
+package com.example.carmaintances;
 
 public final class BuildConfig {
     public final static boolean DEBUG = true;
