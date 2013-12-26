@@ -18,8 +18,10 @@ import com.example.carmaintances.R;
 public class MainActivity extends Activity {
 
 	public int REQUEST_ENABLE_BT = 1;
-	Set<BluetoothDevice> pairedDevices;
-	ArrayList<String> btlist;
+	private ArrayList<String> btlist;
+	private BluetoothDevice selectedBtDev;
+	private BluetoothAdapter mBluetoothAdapter;
+	private Set<BluetoothDevice> pairedDevices;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -46,6 +48,7 @@ public class MainActivity extends Activity {
 	               public void onClick(DialogInterface dialog, int which) {
 	               // The 'which' argument contains the index position
 	               // of the selected item
+	            	   //selectedBtDev = pairedDevices.toArray()[which]
 	           }
 	    });
 	    return builder.create();
@@ -54,7 +57,7 @@ public class MainActivity extends Activity {
 	public void onStart() {
 		super.onStart();
 		
-		BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+		mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 		if (mBluetoothAdapter == null) {
 			AlertToast.showAlert(this, getString(R.string.err_nobluetooth));
 		}
@@ -63,6 +66,12 @@ public class MainActivity extends Activity {
 			Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
 			startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
 		}
+		else {
+			showBtDialog(mBluetoothAdapter);
+		}
+	}
+
+	private void showBtDialog(BluetoothAdapter mBluetoothAdapter) {
 		
 		pairedDevices = mBluetoothAdapter.getBondedDevices();
 		// If there are paired devices
@@ -79,6 +88,15 @@ public class MainActivity extends Activity {
 			btlist.add(getString(R.string.title_btsearch));
 			Dialog dlg = onCreateDialog();
 			dlg.show();
+		}
+	}
+	
+	public void onActivityResult (int requestCode, int resultCode, Intent data) {
+		
+		if (resultCode == RESULT_CANCELED) return;
+		
+		if (requestCode == REQUEST_ENABLE_BT) {
+			showBtDialog(mBluetoothAdapter);
 		}
 	}
 }
