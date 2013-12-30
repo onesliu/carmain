@@ -16,7 +16,6 @@ import android.content.IntentFilter;
 import android.os.Bundle;
 import android.view.Menu;
 
-import com.example.carmaintances.R;
 
 public class MainActivity extends Activity {
 
