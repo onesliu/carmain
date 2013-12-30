@@ -8,8 +8,11 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.view.Menu;
 
@@ -28,6 +31,9 @@ public class MainActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		btlist = new ArrayList<String>();
+		// Register the BroadcastReceiver
+		IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+		registerReceiver(mReceiver, filter); // Don't forget to unregister during onDestroy
 	}
 
 	@Override
@@ -46,10 +52,11 @@ public class MainActivity extends Activity {
 	    builder.setTitle(R.string.title_btpopup)
 	           .setItems(stringArr, new DialogInterface.OnClickListener() {
 	               public void onClick(DialogInterface dialog, int which) {
-	               // The 'which' argument contains the index position
-	               // of the selected item
+		               // The 'which' argument contains the index position
+		               // of the selected item
 	            	   //selectedBtDev = pairedDevices.toArray()[which]
-	           }
+	            	   mBluetoothAdapter.startDiscovery();
+	               }
 	    });
 	    return builder.create();
 	}
@@ -99,4 +106,17 @@ public class MainActivity extends Activity {
 			showBtDialog(mBluetoothAdapter);
 		}
 	}
+	
+	private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
+	    public void onReceive(Context context, Intent intent) {
+	        String action = intent.getAction();
+	        // When discovery finds a device
+	        if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+	            // Get the BluetoothDevice object from the Intent
+	            BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+	            // Add the name and address to an array adapter to show in a ListView
+	            btlist.add(device.getName());
+	        }
+	    }
+	};
 }
