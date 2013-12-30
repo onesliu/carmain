@@ -32,7 +32,17 @@ public class MainActivity extends Activity {
 		btlist = new ArrayList<String>();
 		// Register the BroadcastReceiver
 		IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+		IntentFilter filter2 = new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
+		IntentFilter filter3 = new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
 		registerReceiver(mReceiver, filter); // Don't forget to unregister during onDestroy
+		registerReceiver(mReceiver, filter2);
+		registerReceiver(mReceiver, filter3);
+	}
+	
+	@Override
+	protected void onDestroy() {
+		unregisterReceiver(mReceiver);
+		super.onDestroy();
 	}
 
 	@Override
@@ -53,8 +63,19 @@ public class MainActivity extends Activity {
 	               public void onClick(DialogInterface dialog, int which) {
 		               // The 'which' argument contains the index position
 		               // of the selected item
-	            	   //selectedBtDev = pairedDevices.toArray()[which]
-	            	   mBluetoothAdapter.startDiscovery();
+	            	   if (btlist.size() == which+1) {
+	            		   mBluetoothAdapter.startDiscovery();
+	            	   }
+	            	   else {
+	            		   int i = 0;
+	            		   for (BluetoothDevice device : pairedDevices) {
+	            			   if (i == which) {
+	            				   selectedBtDev = device;
+	            				   AlertToast.showAlert(MainActivity.this, selectedBtDev.getName());
+	            				   break;
+	            			   }
+	            		   }
+	            	   }
 	               }
 	    });
 	    return builder.create();
@@ -115,6 +136,18 @@ public class MainActivity extends Activity {
 	            BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 	            // Add the name and address to an array adapter to show in a ListView
 	            btlist.add(device.getName());
+	        }
+	        else if (BluetoothAdapter.ACTION_DISCOVERY_STARTED.equals(action)) {
+	        	btlist.clear();
+	        }
+	        else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
+	    		if (btlist.size() > 0) {
+	    			Dialog dlg = onCreateDialog();
+	    			dlg.show();
+	    		}
+	    		else  {
+	    			AlertToast.showAlert(MainActivity.this, getString(R.string.err_nobtadapter));
+	    		}
 	        }
 	    }
 	};
