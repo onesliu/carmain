@@ -2,6 +2,7 @@ package com.leonliu.cm;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import android.app.Activity;
@@ -14,6 +15,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.Menu;
 
@@ -21,16 +23,20 @@ import android.view.Menu;
 public class MainActivity extends Activity {
 
 	public int REQUEST_ENABLE_BT = 1;
-	private Map<String,String> btmap;
+	public String PREF_CFG = "config";
+	static final String SerialPortServiceClass_UUID = "{00001101-0000-1000-8000-00805F9B34FB}";
+	
+	private Map<String,BluetoothDevice> btmap;
 	private BluetoothDevice selectedBtDev;
 	private BluetoothAdapter mBluetoothAdapter;
 	private Set<BluetoothDevice> pairedDevices;
+	protected SharedPreferences cfgPref;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-		btmap = new HashMap<String,String>();
+		btmap = new HashMap<String,BluetoothDevice>();
 	}
 	
 	@Override
@@ -48,11 +54,9 @@ public class MainActivity extends Activity {
 	protected void onResume() {
 		// Register the BroadcastReceiver
 		IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-		IntentFilter filter2 = new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
-		IntentFilter filter3 = new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+		filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
+		filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
 		registerReceiver(mReceiver, filter); // Don't forget to unregister during onDestroy
-		registerReceiver(mReceiver, filter2);
-		registerReceiver(mReceiver, filter3);
 		super.onResume();
 	}
 
@@ -76,24 +80,31 @@ public class MainActivity extends Activity {
 			startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
 		}
 		else {
-			showBtDialog(mBluetoothAdapter);
+			showBtPairedDialog(mBluetoothAdapter);
 		}
+	}
+	
+	public void getCfg() {
+		cfgPref = getSharedPreferences(PREF_CFG, 0);
 	}
 
 	public Dialog CreateBtPairedDialog() {
 		
 		String[] stringArr = new String[btmap.size()+1];
-		btmap.values().toArray(stringArr);
+		int i = 0;
+		for (Entry<String,BluetoothDevice> en : btmap.entrySet()) {
+			stringArr[i++] = en.getValue().getName() + " " + en.getValue().getAddress();
+		}
 		stringArr[stringArr.length-1] = getString(R.string.title_btsearch);
 		
 	    AlertDialog.Builder builder = new AlertDialog.Builder(this);
 	    builder.setTitle(R.string.title_btpopup)
-	    		.setCancelable(false)
+	    		.setCancelable(true)
 	    		.setItems(stringArr, new DialogInterface.OnClickListener() {
 	               public void onClick(DialogInterface dialog, int which) {
 		               // The 'which' argument contains the index position
 		               // of the selected item
-	            	   if (btmap.size() == which+1) {
+	            	   if (btmap.size() == which) {
 	            		   if (mBluetoothAdapter.isDiscovering() == false)
 	            			   mBluetoothAdapter.startDiscovery();
 	            	   }
@@ -114,20 +125,31 @@ public class MainActivity extends Activity {
 	
 	public Dialog CreateBtSearchedDialog() {
 		
-		String[] stringArr = new String[btmap.size()+1];
-		btmap.values().toArray(stringArr);
+		String[] stringArr = new String[btmap.size()];
+		int i = 0;
+		for (Entry<String,BluetoothDevice> en : btmap.entrySet()) {
+			stringArr[i++] = en.getValue().getName() + " " + en.getValue().getAddress();
+		}
 		
 	    AlertDialog.Builder builder = new AlertDialog.Builder(this);
 	    builder.setTitle(R.string.title_btpopup)
-	    		.setCancelable(false)
+	    		.setCancelable(true)
 	    		.setItems(stringArr, new DialogInterface.OnClickListener() {
 	               public void onClick(DialogInterface dialog, int which) {
+            		   int i = 0;
+            		   for (BluetoothDevice device : btmap.values()) {
+            			   if (i == which) {
+            				   selectedBtDev = device;
+            				   AlertToast.showAlert(MainActivity.this, selectedBtDev.getName());
+            				   break;
+            			   }
+            		   }
 	               }
 	    });
 	    return builder.create();
 	}
 
-	private void showBtDialog(BluetoothAdapter mBluetoothAdapter) {
+	private void showBtPairedDialog(BluetoothAdapter mBluetoothAdapter) {
 		
 		pairedDevices = mBluetoothAdapter.getBondedDevices();
 		// If there are paired devices
@@ -136,7 +158,7 @@ public class MainActivity extends Activity {
 			btmap.clear();
 		    for (BluetoothDevice device : pairedDevices) {
 		        // Add the name and address to an array adapter to show in a ListView
-		    	btmap.put(device.getAddress(), device.getName());
+		    	btmap.put(device.getAddress(), device);
 		    }
 		}
 		
@@ -149,7 +171,7 @@ public class MainActivity extends Activity {
 		if (resultCode == RESULT_CANCELED) return;
 		
 		if (requestCode == REQUEST_ENABLE_BT) {
-			showBtDialog(mBluetoothAdapter);
+			showBtPairedDialog(mBluetoothAdapter);
 		}
 	}
 	
@@ -161,7 +183,7 @@ public class MainActivity extends Activity {
 	            // Get the BluetoothDevice object from the Intent
 	            BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 	            // Add the name and address to an array adapter to show in a ListView
-	            btmap.put(device.getAddress(), device.getName());
+	            btmap.put(device.getAddress(), device);
 	        }
 	        else if (BluetoothAdapter.ACTION_DISCOVERY_STARTED.equals(action)) {
 	        	btmap.clear();
