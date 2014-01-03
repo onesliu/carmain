@@ -16,7 +16,7 @@ import android.util.Log;
 
 public class BluetoothService {
 	// Debugging
-	private static final String TAG = "BluetoothChatService";
+	private static final String TAG = "BluetoothService";
 	private static final boolean D = true;
 
 	// Unique UUID for this application
