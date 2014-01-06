@@ -17,6 +17,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.view.Menu;
 
 
@@ -31,12 +33,31 @@ public class MainActivity extends Activity {
 	private BluetoothAdapter mBluetoothAdapter;
 	private Set<BluetoothDevice> pairedDevices;
 	protected SharedPreferences cfgPref;
+	BluetoothService btsrv;
+	
+	static Handler bthandler = new Handler() {
+		@Override
+		public void handleMessage(Message msg) {
+			switch (msg.what) {
+			case BluetoothService.MESSAGE_READ:
+				break;
+			case BluetoothService.MESSAGE_STATE_CHANGE:
+				break;
+			case BluetoothService.MESSAGE_TOAST:
+				break;
+			case BluetoothService.MESSAGE_DEVICE_NAME:
+				break;
+			}
+			super.handleMessage(msg);
+		}
+	};
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		btmap = new HashMap<String,BluetoothDevice>();
+		btsrv = new BluetoothService(this, bthandler);
 	}
 	
 	@Override
@@ -88,6 +109,15 @@ public class MainActivity extends Activity {
 		cfgPref = getSharedPreferences(PREF_CFG, 0);
 	}
 
+	private void StartBluetooth()
+	{
+		//AlertToast.showAlert(MainActivity.this, selectedBtDev.getName());
+		if (selectedBtDev != null) {
+			btsrv.start();
+			btsrv.connect(selectedBtDev);
+		}
+	}
+
 	public Dialog CreateBtPairedDialog() {
 		
 		String[] stringArr = new String[btmap.size()+1];
@@ -113,7 +143,7 @@ public class MainActivity extends Activity {
 	            		   for (BluetoothDevice device : pairedDevices) {
 	            			   if (i == which) {
 	            				   selectedBtDev = device;
-	            				   AlertToast.showAlert(MainActivity.this, selectedBtDev.getName());
+	            				   StartBluetooth();
 	            				   break;
 	            			   }
 	            		   }
@@ -140,7 +170,7 @@ public class MainActivity extends Activity {
             		   for (BluetoothDevice device : btmap.values()) {
             			   if (i == which) {
             				   selectedBtDev = device;
-            				   AlertToast.showAlert(MainActivity.this, selectedBtDev.getName());
+            				   StartBluetooth();
             				   break;
             			   }
             		   }
