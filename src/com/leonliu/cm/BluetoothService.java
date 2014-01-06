@@ -9,9 +9,7 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
-import android.os.Bundle;
 import android.os.Handler;
-import android.os.Message;
 import android.util.Log;
 
 public class BluetoothService {
@@ -25,6 +23,7 @@ public class BluetoothService {
 
 	// Member fields
 	private final BluetoothAdapter mAdapter;
+	private BluetoothDevice mDevice;
 	private final Handler mHandler;
 	private ConnectThread mConnectThread;
 	private ConnectedThread mConnectedThread;
@@ -41,8 +40,8 @@ public class BluetoothService {
 	public static final int MESSAGE_STATE_CHANGE = 1;
 	public static final int MESSAGE_READ = 2;
 	public static final int MESSAGE_WRITE = 3;
-	public static final int MESSAGE_DEVICE_NAME = 4;
-	public static final int MESSAGE_TOAST = 5;
+	public static final int MESSAGE_CONNECTION_FAIL = 4;
+	public static final int MESSAGE_CONNECTION_LOST = 5;
 
 	// Key names received from the BluetoothChatService Handler
 	public static final String DEVICE_NAME = "device_name";
@@ -61,7 +60,7 @@ public class BluetoothService {
 		mState = STATE_NONE;
 		mHandler = handler;
 	}
-
+	
 	/**
 	 * Set the current state of the chat connection
 	 * 
@@ -84,19 +83,6 @@ public class BluetoothService {
 		return mState;
 	}
 	
-	public searchSavedDevice() {
-		pairedDevices = mBluetoothAdapter.getBondedDevices();
-		// If there are paired devices
-		if (pairedDevices.size() > 0) {
-		    // Loop through paired devices
-			btmap.clear();
-		    for (BluetoothDevice device : pairedDevices) {
-		        // Add the name and address to an array adapter to show in a ListView
-		    	btmap.put(device.getAddress(), device);
-		    }
-		}
-	}
-
 	/**
 	 * Start the ConnectThread to initiate a connection to a remote device.
 	 * 
@@ -104,15 +90,20 @@ public class BluetoothService {
 	 *            The BluetoothDevice to connect
 	 */
 	public synchronized void connect(BluetoothDevice device) {
+		
+		mDevice = device;
+		
 		if (D)
-			Log.d(TAG, "connect to: " + device);
+			Log.d(TAG, "connect to: " + mDevice);
 
 		// Cancel any thread attempting to make a connection
-		if (mState == STATE_CONNECTING) {
-			if (mConnectThread != null) {
-				mConnectThread.cancel();
-				mConnectThread = null;
-			}
+		if (mState != STATE_NONE) {
+			return;
+		}
+
+		if (mConnectThread != null) {
+			mConnectThread.cancel();
+			mConnectThread = null;
 		}
 
 		// Cancel any thread currently running a connection
@@ -122,7 +113,7 @@ public class BluetoothService {
 		}
 
 		// Start the thread to connect with the given device
-		mConnectThread = new ConnectThread(device);
+		mConnectThread = new ConnectThread(mDevice);
 		mConnectThread.start();
 		setState(STATE_CONNECTING);
 	}
@@ -155,13 +146,6 @@ public class BluetoothService {
 		// Start the thread to manage the connection and perform transmissions
 		mConnectedThread = new ConnectedThread(socket);
 		mConnectedThread.start();
-
-		// Send the name of the connected device back to the UI Activity
-		Message msg = mHandler.obtainMessage(MESSAGE_DEVICE_NAME);
-		Bundle bundle = new Bundle();
-		bundle.putString(DEVICE_NAME, device.getName());
-		msg.setData(bundle);
-		mHandler.sendMessage(msg);
 
 		setState(STATE_CONNECTED);
 	}
@@ -210,11 +194,7 @@ public class BluetoothService {
 		close();
 
 		// Send a failure message back to the Activity
-		Message msg = mHandler.obtainMessage(MESSAGE_TOAST);
-		Bundle bundle = new Bundle();
-		bundle.putString(TOAST, "Unable to connect device");
-		msg.setData(bundle);
-		mHandler.sendMessage(msg);
+		mHandler.obtainMessage(MESSAGE_CONNECTION_FAIL, mState, -1).sendToTarget();
 	}
 
 	/**
@@ -224,11 +204,7 @@ public class BluetoothService {
 		close();
 
 		// Send a failure message back to the Activity
-		Message msg = mHandler.obtainMessage(MESSAGE_TOAST);
-		Bundle bundle = new Bundle();
-		bundle.putString(TOAST, "Device connection was lost");
-		msg.setData(bundle);
-		mHandler.sendMessage(msg);
+		mHandler.obtainMessage(MESSAGE_CONNECTION_LOST, mState, -1).sendToTarget();
 	}
 
 	/**
