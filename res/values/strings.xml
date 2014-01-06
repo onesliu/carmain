@@ -8,5 +8,11 @@
     <string name="title_btsearch">搜索其它蓝牙设备</string>
     <string name="err_nobluetooth">手机无蓝牙部件</string>
     <string name="err_nobtadapter">没搜索到外部蓝牙设备</string>
+	<string-array name="connect_status">
+        <item>断开连接</item>
+        <item>开始连接</item>
+        <item>正在连接</item>
+        <item>连接成功</item>
+    </string-array>
     
 </resources>

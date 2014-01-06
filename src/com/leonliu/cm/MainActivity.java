@@ -7,6 +7,7 @@ import java.util.Set;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Application;
 import android.app.Dialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -35,17 +36,24 @@ public class MainActivity extends Activity {
 	protected SharedPreferences cfgPref;
 	BluetoothService btsrv;
 	
-	static Handler bthandler = new Handler() {
+	private final Handler bthandler = new Handler() {
+		Bundle data;
 		@Override
 		public void handleMessage(Message msg) {
 			switch (msg.what) {
 			case BluetoothService.MESSAGE_READ:
 				break;
 			case BluetoothService.MESSAGE_STATE_CHANGE:
+				String [] state_msg = getResources().getStringArray(R.array.connect_status);
+				AlertToast.showAlert(MainActivity.this, state_msg[msg.arg1]);
 				break;
 			case BluetoothService.MESSAGE_TOAST:
+				data = msg.getData();
+				AlertToast.showAlert(MainActivity.this, data.getString(BluetoothService.TOAST));
 				break;
 			case BluetoothService.MESSAGE_DEVICE_NAME:
+				data = msg.getData();
+				AlertToast.showAlert(MainActivity.this, data.getString(BluetoothService.DEVICE_NAME));		
 				break;
 			}
 			super.handleMessage(msg);
