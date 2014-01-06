@@ -120,7 +120,6 @@ public class MainActivity extends Activity {
 	{
 		//AlertToast.showAlert(MainActivity.this, selectedBtDev.getName());
 		if (selectedBtDev != null) {
-			btsrv.start();
 			btsrv.connect(selectedBtDev);
 		}
 	}

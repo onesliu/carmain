@@ -32,11 +32,9 @@ public class BluetoothService {
 
 	// Constants that indicate the current connection state
 	public static final int STATE_NONE = 0; // we're doing nothing
-	public static final int STATE_LISTEN = 1; // now listening for incoming
-												// connections
-	public static final int STATE_CONNECTING = 2; // now initiating an outgoing
+	public static final int STATE_CONNECTING = 1; // now initiating an outgoing
 													// connection
-	public static final int STATE_CONNECTED = 3; // now connected to a remote
+	public static final int STATE_CONNECTED = 2; // now connected to a remote
 													// device
 
 	// Message types sent from the BluetoothChatService Handler
@@ -85,28 +83,18 @@ public class BluetoothService {
 	public synchronized int getState() {
 		return mState;
 	}
-
-	/**
-	 * Start the chat service. Specifically start AcceptThread to begin a
-	 * session in listening (server) mode. Called by the Activity onResume()
-	 */
-	public synchronized void start() {
-		if (D)
-			Log.d(TAG, "start");
-
-		// Cancel any thread attempting to make a connection
-		if (mConnectThread != null) {
-			mConnectThread.cancel();
-			mConnectThread = null;
+	
+	public searchSavedDevice() {
+		pairedDevices = mBluetoothAdapter.getBondedDevices();
+		// If there are paired devices
+		if (pairedDevices.size() > 0) {
+		    // Loop through paired devices
+			btmap.clear();
+		    for (BluetoothDevice device : pairedDevices) {
+		        // Add the name and address to an array adapter to show in a ListView
+		    	btmap.put(device.getAddress(), device);
+		    }
 		}
-
-		// Cancel any thread currently running a connection
-		if (mConnectedThread != null) {
-			mConnectedThread.cancel();
-			mConnectedThread = null;
-		}
-
-		setState(STATE_LISTEN);
 	}
 
 	/**
@@ -181,9 +169,9 @@ public class BluetoothService {
 	/**
 	 * Stop all threads
 	 */
-	public synchronized void stop() {
+	public synchronized void close() {
 		if (D)
-			Log.d(TAG, "stop");
+			Log.d(TAG, "close");
 		if (mConnectThread != null) {
 			mConnectThread.cancel();
 			mConnectThread = null;
@@ -219,7 +207,7 @@ public class BluetoothService {
 	 * Indicate that the connection attempt failed and notify the UI Activity.
 	 */
 	private void connectionFailed() {
-		setState(STATE_LISTEN);
+		close();
 
 		// Send a failure message back to the Activity
 		Message msg = mHandler.obtainMessage(MESSAGE_TOAST);
@@ -233,7 +221,7 @@ public class BluetoothService {
 	 * Indicate that the connection was lost and notify the UI Activity.
 	 */
 	private void connectionLost() {
-		setState(STATE_LISTEN);
+		close();
 
 		// Send a failure message back to the Activity
 		Message msg = mHandler.obtainMessage(MESSAGE_TOAST);
@@ -288,8 +276,6 @@ public class BluetoothService {
 							"unable to close() socket during connection failure",
 							e2);
 				}
-				// Start the service over to restart listening mode
-				BluetoothService.this.start();
 				return;
 			}
 
