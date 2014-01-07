@@ -60,8 +60,7 @@ public class MyActivity extends Activity {
 		}
 		else {
 			if (searchPairedDevice()) {
-				ShowConnectProgressBar(true);
-				btsrv.connect(mDevice);
+				startConnectBt();
 			}
 			else {
 				mAdapter.cancelDiscovery();
@@ -74,24 +73,32 @@ public class MyActivity extends Activity {
 	protected boolean searchPairedDevice() {
 		
 		Set<BluetoothDevice> pairedDevices = mAdapter.getBondedDevices();
+	    return findSavedDevice(pairedDevices);
+	}
+
+	private boolean findSavedDevice(Set<BluetoothDevice> devices) {
 		// If there are paired devices
-		if (pairedDevices.size() > 0) {
+		if (devices.size() > 0) {
 		    // Loop through paired devices
-		    for (BluetoothDevice device : pairedDevices) {
-		        // Add the name and address to an array adapter to show in a ListView
-		    	if (deviceMac != null && device.getAddress().equals(deviceMac)) {
-		    		if (deviceName != null && !device.getName().equals(deviceName))
-		    			continue;
-		    		mDevice = device;
-		    		return true;
-		    	}
-		    }
+			for (BluetoothDevice device : devices) {
+			    // Add the name and address to an array adapter to show in a ListView
+				if (deviceMac != null && device.getAddress().equals(deviceMac)) {
+					if (deviceName != null && !device.getName().equals(deviceName))
+						continue;
+					mDevice = device;
+					return true;
+				}
+			}
 		}
-		
 		return false;
 	}
 	
 	protected void ShowConnectProgressBar(boolean start) {
+	}
+
+	private void startConnectBt() {
+		ShowConnectProgressBar(true);
+		btsrv.connect(mDevice);
 	}
 
 	protected final BroadcastReceiver mReceiver = new BroadcastReceiver() {
@@ -112,14 +119,9 @@ public class MyActivity extends Activity {
 	        	ShowConnectProgressBar(false);
 	    		if (mDiscoveredDevice.size() > 0) {
 	    		    // Loop through paired devices
-	    		    for (BluetoothDevice device : mDiscoveredDevice) {
-	    		        // Add the name and address to an array adapter to show in a ListView
-	    		    	if (deviceName.equals(device.getName()) && deviceMac.equals(device.getAddress())) {
-	    		    		mDevice = device;
-							ShowConnectProgressBar(true);
-	    		    		btsrv.connect(mDevice);
-	    		    	}
-	    		    }
+	    			if (findSavedDevice(mDiscoveredDevice)) {
+						startConnectBt();
+	    			}
 	    		}
 	        }
 	    }
@@ -156,8 +158,7 @@ public class MyActivity extends Activity {
 	Thread retryBt = new Thread() {
 		public void run() {
 			while (!retryBtStop) {
-				ShowConnectProgressBar(true);
-				btsrv.connect(mDevice);
+				startConnectBt();
 				try {
 					Thread.sleep(5000);
 				} catch (InterruptedException e) {
@@ -186,8 +187,7 @@ public class MyActivity extends Activity {
             		   for (BluetoothDevice device : mDiscoveredDevice) {
             			   if (i == which) {
             				   mDevice = device;
-							   ShowConnectProgressBar(true);
-            				   btsrv.connect(mDevice);
+							   startConnectBt();
             				   break;
             			   }
             		   }
@@ -232,8 +232,7 @@ public class MyActivity extends Activity {
 		
 		if (requestCode == REQUEST_ENABLE_BT) {
 			if (searchPairedDevice()) {
-				ShowConnectProgressBar(true);
-				btsrv.connect(mDevice);
+				startConnectBt();
 			}
 			else {
 				mAdapter.cancelDiscovery();
@@ -243,6 +242,5 @@ public class MyActivity extends Activity {
 
 		super.onActivityResult(requestCode, resultCode, data);
 	}
-
 
 }
