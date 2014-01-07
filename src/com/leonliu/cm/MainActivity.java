@@ -2,16 +2,28 @@ package com.leonliu.cm;
 
 import android.os.Bundle;
 import android.view.Menu;
+import android.widget.ProgressBar;
 
 
 public class MainActivity extends MyActivity {
 
+	private ProgressBar connectProgress;
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+		findAllView();
 	}
 	
+	private void findAllView() {
+		connectProgress = (ProgressBar) findViewById(R.id.connectProgress);
+	}
+	
+	protected void ShowConnectProgressBar(boolean start) {
+		super.ShowConnectProgressBar(start);
+	}
+
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
