@@ -4,13 +4,13 @@
     <string name="app_name">CarMaintances</string>
     <string name="action_settings">Settings</string>
     <string name="hello_world">Hello world!</string>
-    <string name="title_btpopup">请选择蓝牙设备</string>
-    <string name="title_btdeny">不选择蓝牙设备</string>
-    <string name="err_nobluetooth">手机无蓝牙部件</string>
-    <string name="err_nobtadapter">没搜索到外部蓝牙设备</string>
+    <string name="title_btpopup">请选择蓝牙模块</string>
+    <string name="title_btdeny">不选择蓝牙模块</string>
+    <string name="err_nobluetooth">手机无蓝牙功能</string>
+    <string name="err_nobtadapter">没搜索到可用的蓝牙模块</string>
     <string name="err_btdisconnect">蓝牙连接断开</string>
 	<string-array name="connect_status">
-        <item>断开连接</item>
+        <item>连接断开</item>
         <item>正在连接</item>
         <item>连接成功</item>
     </string-array>

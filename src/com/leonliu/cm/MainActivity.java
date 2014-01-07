@@ -2,6 +2,7 @@ package com.leonliu.cm;
 
 import android.os.Bundle;
 import android.view.Menu;
+import android.view.View;
 import android.widget.ProgressBar;
 
 
@@ -22,6 +23,7 @@ public class MainActivity extends MyActivity {
 	
 	protected void ShowConnectProgressBar(boolean start) {
 		super.ShowConnectProgressBar(start);
+		connectProgress.setVisibility((start)?View.VISIBLE:View.GONE);
 	}
 
 	@Override
@@ -37,8 +39,8 @@ public class MainActivity extends MyActivity {
 
 	@Override
 	protected void onResume() {
-		//
 		super.onResume();
+		connectBluetooth();
 	}
 
 	@Override
@@ -50,7 +52,6 @@ public class MainActivity extends MyActivity {
 	
 	public void onStart() {
 		super.onStart();
-		connectBluetooth();
 	}
 	
 

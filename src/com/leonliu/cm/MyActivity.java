@@ -1,5 +1,7 @@
 package com.leonliu.cm;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -17,6 +19,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 
 public class MyActivity extends Activity {
 
@@ -26,15 +29,18 @@ public class MyActivity extends Activity {
 	protected String PREF_CFG = "config";
 	protected SharedPreferences cfgPref;
 	
+	protected final String keyBtDevName = "BluetoothDeviceName";
+	protected final String keyBtDevMac = "BluetoothDeviceMac";
+	
 	protected void getCfg() {
 		cfgPref = getSharedPreferences(PREF_CFG, 0);
-		deviceName = cfgPref.getString("BluetoothDeviceName", "");
-		deviceMac = cfgPref.getString("BluetoothDeviceMac", "");
+		deviceName = cfgPref.getString(keyBtDevName, "");
+		deviceMac = cfgPref.getString(keyBtDevMac, "");
 	}
 	
 	protected void saveBtCfg() {
-		cfgPref.edit().putString("BluetoothDeviceName", deviceName);
-		cfgPref.edit().putString("BluetoothDeviceMac", deviceMac);
+		cfgPref.edit().putString(keyBtDevName, deviceName);
+		cfgPref.edit().putString(keyBtDevMac, deviceMac);
 		cfgPref.edit().commit();
 	}
 	
@@ -49,9 +55,10 @@ public class MyActivity extends Activity {
 	protected String deviceMac;
 	
 	public void connectBluetooth() {
-		mAdapter = BluetoothAdapter.getDefaultAdapter();
+
 		if (mAdapter == null) {
 			AlertToast.showAlert(this, getString(R.string.err_nobluetooth));
+			return;
 		}
 		
 		if (!mAdapter.isEnabled()) {
@@ -98,6 +105,9 @@ public class MyActivity extends Activity {
 
 	private void startConnectBt() {
 		ShowConnectProgressBar(true);
+		deviceName = mDevice.getName();
+		deviceMac = mDevice.getAddress();
+		saveBtCfg();
 		btsrv.connect(mDevice);
 	}
 
@@ -111,18 +121,41 @@ public class MyActivity extends Activity {
 	            // Add the name and address to an array adapter to show in a ListView
 	            mDiscoveredDevice.add(device);
 	        }
+	        else if (BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(action)) {
+	        	BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                switch (device.getBondState()) {
+                case BluetoothDevice.BOND_BONDING:
+                    Log.d("MyActivity", "Bluetooth pairing......");
+                    break;
+                case BluetoothDevice.BOND_BONDED:
+                    Log.d("MyActivity", "Bluetooth paired.");
+					mDevice = device;
+                    startConnectBt();
+                    break;
+                case BluetoothDevice.BOND_NONE:  
+                    Log.d("MyActivity", "Bluetooth pair caceled.");  
+                    break;  
+                }
+	        }
 	        else if (BluetoothAdapter.ACTION_DISCOVERY_STARTED.equals(action)) {
 	        	ShowConnectProgressBar(true);
 	        	mDiscoveredDevice.clear();
 	        }
 	        else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
 	        	ShowConnectProgressBar(false);
-	    		if (mDiscoveredDevice.size() > 0) {
-	    		    // Loop through paired devices
-	    			if (findSavedDevice(mDiscoveredDevice)) {
-						startConnectBt();
-	    			}
-	    		}
+    		    // Loop through paired devices
+    			if (findSavedDevice(mDiscoveredDevice)) {
+					startConnectBt();
+    			}
+    			else {
+    				if (mDiscoveredDevice.size() > 0) {
+    					Dialog dlg = CreateBtSearchedDialog();
+    					dlg.show();
+    				}
+    				else {
+    					AlertToast.showAlert(MyActivity.this, getString(R.string.err_nobtadapter));
+    				}
+    			}
 	        }
 	    }
 	};
@@ -146,8 +179,10 @@ public class MyActivity extends Activity {
 				break;
 			case BluetoothService.MESSAGE_CONNECTION_LOST:
 			case BluetoothService.MESSAGE_CONNECTION_FAIL:
-				retryBtStop = false;
-				retryBt.start();
+				if (retryBtStop) {
+					retryBtStop = false;
+					retryBt.start();
+				}
 				break;
 			}
 			super.handleMessage(msg);
@@ -171,7 +206,7 @@ public class MyActivity extends Activity {
 	
 	protected Dialog CreateBtSearchedDialog() {
 		
-		String[] stringArr = new String[mDiscoveredDevice.size()];
+		String[] stringArr = new String[mDiscoveredDevice.size()+1];
 		int i = 0;
 		for (BluetoothDevice device : mDiscoveredDevice) {
 			stringArr[i++] = device.getName() + " " + device.getAddress();
@@ -187,7 +222,24 @@ public class MyActivity extends Activity {
             		   for (BluetoothDevice device : mDiscoveredDevice) {
             			   if (i == which) {
             				   mDevice = device;
-							   startConnectBt();
+            				   if (mDevice.getBondState() == BluetoothDevice.BOND_NONE) {
+            					 	//利用反射方法调用BluetoothDevice.createBond(BluetoothDevice remoteDevice);  
+            	                    Method createBondMethod;
+									try {
+										createBondMethod = BluetoothDevice.class.getMethod("createBond");
+	            	                    createBondMethod.invoke(mDevice);  
+									} catch (NoSuchMethodException e) {
+										e.printStackTrace();
+									} catch (IllegalAccessException e) {
+										e.printStackTrace();
+									} catch (IllegalArgumentException e) {
+										e.printStackTrace();
+									} catch (InvocationTargetException e) {
+										e.printStackTrace();
+									}
+            				   }
+            				   else
+            					   startConnectBt();
             				   break;
             			   }
             		   }
@@ -217,6 +269,7 @@ public class MyActivity extends Activity {
 		IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
 		filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
 		filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+		filter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
 		registerReceiver(mReceiver, filter); // Don't forget to unregister during onDestroy
 		
 		mAdapter = BluetoothAdapter.getDefaultAdapter();
