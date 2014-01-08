@@ -1,6 +1,5 @@
 package com.leonliu.cm;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.Set;
@@ -39,9 +38,8 @@ public class MyActivity extends Activity {
 	}
 	
 	protected void saveBtCfg() {
-		cfgPref.edit().putString(keyBtDevName, deviceName);
-		cfgPref.edit().putString(keyBtDevMac, deviceMac);
-		cfgPref.edit().commit();
+		cfgPref.edit().putString(keyBtDevName, deviceName).commit();
+		cfgPref.edit().putString(keyBtDevMac, deviceMac).commit();
 	}
 	
 	//======================================================================
@@ -56,6 +54,8 @@ public class MyActivity extends Activity {
 	
 	public void connectBluetooth() {
 
+		if (mAdapter == null)
+			mAdapter = BluetoothAdapter.getDefaultAdapter();
 		if (mAdapter == null) {
 			AlertToast.showAlert(this, getString(R.string.err_nobluetooth));
 			return;
@@ -63,20 +63,39 @@ public class MyActivity extends Activity {
 		
 		if (!mAdapter.isEnabled()) {
 			Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+			//enableBtIntent.
 			startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
 		}
 		else {
-			if (searchPairedDevice()) {
-				startConnectBt();
-			}
-			else {
-				mAdapter.cancelDiscovery();
-				mAdapter.startDiscovery();
-			}
+			findBtDev();
 		}
-
 	}
 	
+	public void reconnectBluetooth() {
+		deviceName = "";
+		deviceMac = "";
+		saveBtCfg();
+		connectBluetooth();
+	}
+
+	private void findBtDev() {
+		if (searchPairedDevice()) {
+			startConnectBt();
+		}
+		else {
+			mAdapter.cancelDiscovery();
+			mAdapter.startDiscovery();
+		}
+	}
+	
+	private void startConnectBt() {
+		ShowConnectProgressBar(true);
+		deviceName = mDevice.getName();
+		deviceMac = mDevice.getAddress();
+		saveBtCfg();
+		btsrv.connect(mDevice);
+	}
+
 	protected boolean searchPairedDevice() {
 		
 		Set<BluetoothDevice> pairedDevices = mAdapter.getBondedDevices();
@@ -101,14 +120,6 @@ public class MyActivity extends Activity {
 	}
 	
 	protected void ShowConnectProgressBar(boolean start) {
-	}
-
-	private void startConnectBt() {
-		ShowConnectProgressBar(true);
-		deviceName = mDevice.getName();
-		deviceMac = mDevice.getAddress();
-		saveBtCfg();
-		btsrv.connect(mDevice);
 	}
 
 	protected final BroadcastReceiver mReceiver = new BroadcastReceiver() {
@@ -173,12 +184,11 @@ public class MyActivity extends Activity {
 					retryBtStop = true;
 					ShowConnectProgressBar(false);
 				}
-				else {
-					AlertToast.showAlert(MyActivity.this, state_msg[msg.arg1]);
-				}
+				AlertToast.showAlert(MyActivity.this, state_msg[msg.arg1]);
 				break;
 			case BluetoothService.MESSAGE_CONNECTION_LOST:
 			case BluetoothService.MESSAGE_CONNECTION_FAIL:
+				ShowConnectProgressBar(false);
 				if (retryBtStop) {
 					retryBtStop = false;
 					retryBt.start();
@@ -228,13 +238,7 @@ public class MyActivity extends Activity {
 									try {
 										createBondMethod = BluetoothDevice.class.getMethod("createBond");
 	            	                    createBondMethod.invoke(mDevice);  
-									} catch (NoSuchMethodException e) {
-										e.printStackTrace();
-									} catch (IllegalAccessException e) {
-										e.printStackTrace();
-									} catch (IllegalArgumentException e) {
-										e.printStackTrace();
-									} catch (InvocationTargetException e) {
+									} catch (Exception e) {
 										e.printStackTrace();
 									}
             				   }
@@ -258,13 +262,15 @@ public class MyActivity extends Activity {
 	}
 
 	@Override
-	protected void onPause() {
+	protected void onStop() {
 		unregisterReceiver(mReceiver);
-		super.onPause();
+		super.onStop();
 	}
 
 	@Override
-	protected void onResume() {
+	protected void onStart() {
+		super.onStart();
+
 		// Register the BroadcastReceiver
 		IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
 		filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
@@ -274,8 +280,6 @@ public class MyActivity extends Activity {
 		
 		mAdapter = BluetoothAdapter.getDefaultAdapter();
 		getCfg();
-		
-		super.onResume();
 	}
 
 
@@ -284,13 +288,7 @@ public class MyActivity extends Activity {
 		if (resultCode == RESULT_CANCELED) return;
 		
 		if (requestCode == REQUEST_ENABLE_BT) {
-			if (searchPairedDevice()) {
-				startConnectBt();
-			}
-			else {
-				mAdapter.cancelDiscovery();
-				mAdapter.startDiscovery();
-			}
+			findBtDev();
 		}
 
 		super.onActivityResult(requestCode, resultCode, data);

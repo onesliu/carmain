@@ -175,6 +175,7 @@ public class BluetoothService {
 	 * @see ConnectedThread#write(byte[])
 	 */
 	public boolean write(byte[] out) {
+		if (out.length <= 0) return true;
 		// Create temporary object
 		ConnectedThread r;
 		// Synchronize a copy of the ConnectedThread
