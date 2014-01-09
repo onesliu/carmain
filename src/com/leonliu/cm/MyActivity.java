@@ -54,8 +54,6 @@ public class MyActivity extends Activity {
 	
 	public void connectBluetooth() {
 
-		if (mAdapter == null)
-			mAdapter = BluetoothAdapter.getDefaultAdapter();
 		if (mAdapter == null) {
 			AlertToast.showAlert(this, getString(R.string.err_nobluetooth));
 			return;
@@ -83,8 +81,8 @@ public class MyActivity extends Activity {
 			startConnectBt();
 		}
 		else {
-			mAdapter.cancelDiscovery();
-			mAdapter.startDiscovery();
+			if (mAdapter.isDiscovering() == false)
+				mAdapter.startDiscovery();
 		}
 	}
 	
@@ -170,6 +168,9 @@ public class MyActivity extends Activity {
 	        }
 	    }
 	};
+
+	protected void readFromBluetooth(byte[] buffer, int len) {
+	}
 	
 	protected final Handler bthandler = new Handler() {
 		@Override
@@ -178,37 +179,40 @@ public class MyActivity extends Activity {
 
 			switch (msg.what) {
 			case BluetoothService.MESSAGE_READ:
+				readFromBluetooth((byte[])msg.obj, msg.arg1);
 				break;
 			case BluetoothService.MESSAGE_STATE_CHANGE:
 				if (msg.arg1 == BluetoothService.STATE_CONNECTED) {
-					retryBtStop = true;
 					ShowConnectProgressBar(false);
+					if (StopBtRetry == true) {
+						StopBtRetry = false;
+						retryBt.start();
+					}
 				}
 				AlertToast.showAlert(MyActivity.this, state_msg[msg.arg1]);
 				break;
 			case BluetoothService.MESSAGE_CONNECTION_LOST:
 			case BluetoothService.MESSAGE_CONNECTION_FAIL:
 				ShowConnectProgressBar(false);
-				if (retryBtStop) {
-					retryBtStop = false;
-					retryBt.start();
-				}
 				break;
 			}
 			super.handleMessage(msg);
 		}
 	};
 	
-	protected boolean retryBtStop = false;
+	protected boolean StopBtRetry = true;
 	Thread retryBt = new Thread() {
 		public void run() {
-			while (!retryBtStop) {
-				startConnectBt();
-				try {
-					Thread.sleep(5000);
-				} catch (InterruptedException e) {
-					AlertToast.showAlert(MyActivity.this, getString(R.string.err_btdisconnect));
-					break;
+			while (StopBtRetry == false) {
+				if (btsrv.getState() == BluetoothService.STATE_NONE) {
+					try {
+						Thread.sleep(5000);
+					} catch (InterruptedException e) {
+						AlertToast.showAlert(MyActivity.this, getString(R.string.err_btdisconnect));
+						break;
+					}
+
+					startConnectBt();
 				}
 			}
 		}
@@ -258,12 +262,15 @@ public class MyActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		btsrv = new BluetoothService(this, bthandler);
 		mDiscoveredDevice = new HashSet<BluetoothDevice>();
+		mAdapter = BluetoothAdapter.getDefaultAdapter();
+		getCfg();
 		super.onCreate(savedInstanceState);
 	}
 
 	@Override
 	protected void onStop() {
 		unregisterReceiver(mReceiver);
+		StopBtRetry = true;
 		super.onStop();
 	}
 
@@ -277,9 +284,7 @@ public class MyActivity extends Activity {
 		filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
 		filter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
 		registerReceiver(mReceiver, filter); // Don't forget to unregister during onDestroy
-		
-		mAdapter = BluetoothAdapter.getDefaultAdapter();
-		getCfg();
+		StopBtRetry = false;
 	}
 
 

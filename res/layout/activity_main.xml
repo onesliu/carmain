@@ -34,6 +34,7 @@
         android:layout_alignLeft="@+id/reconnect"
         android:layout_below="@+id/reconnect"
         android:layout_toLeftOf="@+id/sendBtn"
+        android:inputType="text"
         android:ems="10" >
 
         <requestFocus />
@@ -45,7 +46,9 @@
         android:layout_height="fill_parent"
         android:layout_below="@+id/debugInput"
         android:ems="10"
-        android:inputType="textMultiLine" />
+        android:minLines="15"
+        android:gravity="top"
+        android:inputType="none" />
 
     <Button
         android:id="@+id/sendBtn"

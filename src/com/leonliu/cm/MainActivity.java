@@ -1,18 +1,17 @@
 package com.leonliu.cm;
 
-import java.util.Arrays;
-
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.ProgressBar;
-import android.widget.TextView;
 
 
 public class MainActivity extends MyActivity {
 
 	private ProgressBar connectProgress;
-	private TextView inputText;
+	private EditText inputText;
+	private EditText outputText;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -23,14 +22,19 @@ public class MainActivity extends MyActivity {
 	
 	private void findAllView() {
 		connectProgress = (ProgressBar) findViewById(R.id.connectProgress);
-		inputText = (TextView)findViewById(R.id.debugInput);
+		inputText = (EditText)findViewById(R.id.debugInput);
+		outputText = (EditText)findViewById(R.id.debugOutput);
 	}
 	
 	protected void ShowConnectProgressBar(boolean start) {
 		super.ShowConnectProgressBar(start);
 		connectProgress.setVisibility((start)?View.VISIBLE:View.GONE);
 	}
-	
+
+	protected void readFromBluetooth(byte[] buffer, int len) {
+		//outputText.
+	}
+
 	public void onConnectBt(View v) {
 		reconnectBluetooth();
 	}
