@@ -186,7 +186,8 @@ public class MyActivity extends Activity {
 					ShowConnectProgressBar(false);
 					if (StopBtRetry == true) {
 						StopBtRetry = false;
-						retryBt.start();
+						if (retryBt.isAlive() == false)
+							retryBt.start();
 					}
 				}
 				AlertToast.showAlert(MyActivity.this, state_msg[msg.arg1]);
@@ -212,7 +213,9 @@ public class MyActivity extends Activity {
 						break;
 					}
 
-					startConnectBt();
+					Log.d("MyActivity", "check bluetooth connection.");
+					if (btsrv.getState() != BluetoothService.STATE_NONE)
+						startConnectBt();
 				}
 			}
 		}
@@ -284,7 +287,6 @@ public class MyActivity extends Activity {
 		filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
 		filter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
 		registerReceiver(mReceiver, filter); // Don't forget to unregister during onDestroy
-		StopBtRetry = false;
 	}
 
 

@@ -5,14 +5,17 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.UUID;
 
+import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Handler;
+import android.os.IBinder;
 import android.util.Log;
 
-public class BluetoothService {
+public class BluetoothService extends Service{
 	// Debugging
 	private static final String TAG = "BluetoothService";
 	private static final boolean D = true;
@@ -46,6 +49,12 @@ public class BluetoothService {
 	// Key names received from the BluetoothChatService Handler
 	public static final String DEVICE_NAME = "device_name";
 	public static final String TOAST = "toast";
+
+	@Override
+	public IBinder onBind(Intent intent) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 	/**
 	 * Constructor. Prepares a new BluetoothChat session.
@@ -350,4 +359,5 @@ public class BluetoothService {
 			}
 		}
 	}
+
 }
