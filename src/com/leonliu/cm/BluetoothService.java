@@ -82,12 +82,6 @@ public class BluetoothService extends Service{
 	}
 
 	@Override
-	public void onStart(Intent intent, int startId) {
-		// TODO Auto-generated method stub
-		super.onStart(intent, startId);
-	}
-
-	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		// TODO Auto-generated method stub
 		return super.onStartCommand(intent, flags, startId);
@@ -147,65 +141,44 @@ public class BluetoothService extends Service{
 	 * @param device
 	 *            The BluetoothDevice to connect
 	 */
-	public synchronized void connect(BluetoothDevice device) {
+	public void connect(BluetoothDevice device, int delay) {
 		
-		mDevice = device;
+		synchronized (this) {
+			mDevice = device;
+			
+			if (D)
+				Log.d(TAG, "connect to: " + mDevice);
+	
+			// Cancel any thread attempting to make a connection
+			if (mState != STATE_NONE) {
+				return;
+			}
+	
+			if (mConnectThread != null) {
+				mConnectThread.cancel();
+				mConnectThread = null;
+			}
+	
+			// Cancel any thread currently running a connection
+			if (mConnectedThread != null) {
+				mConnectedThread.cancel();
+				mConnectedThread = null;
+			}
+		}
+
+		try {
+			if (delay > 0)
+				Thread.sleep(delay * 1000);
+		} catch (InterruptedException e1) {
+			e1.printStackTrace();
+		}
 		
-		if (D)
-			Log.d(TAG, "connect to: " + mDevice);
-
-		// Cancel any thread attempting to make a connection
-		if (mState != STATE_NONE) {
-			return;
+		synchronized (this) {
+			// Start the thread to connect with the given device
+			mConnectThread = new ConnectThread(mDevice);
+			mConnectThread.start();
+			setState(STATE_CONNECTING);
 		}
-
-		if (mConnectThread != null) {
-			mConnectThread.cancel();
-			mConnectThread = null;
-		}
-
-		// Cancel any thread currently running a connection
-		if (mConnectedThread != null) {
-			mConnectedThread.cancel();
-			mConnectedThread = null;
-		}
-
-		// Start the thread to connect with the given device
-		mConnectThread = new ConnectThread(mDevice);
-		mConnectThread.start();
-		setState(STATE_CONNECTING);
-	}
-
-	/**
-	 * Start the ConnectedThread to begin managing a Bluetooth connection
-	 * 
-	 * @param socket
-	 *            The BluetoothSocket on which the connection was made
-	 * @param device
-	 *            The BluetoothDevice that has been connected
-	 */
-	public synchronized void connected(BluetoothSocket socket,
-			BluetoothDevice device) {
-		if (D)
-			Log.d(TAG, "connected");
-
-		// Cancel the thread that completed the connection
-		if (mConnectThread != null) {
-			mConnectThread.cancel();
-			mConnectThread = null;
-		}
-
-		// Cancel any thread currently running a connection
-		if (mConnectedThread != null) {
-			mConnectedThread.cancel();
-			mConnectedThread = null;
-		}
-
-		// Start the thread to manage the connection and perform transmissions
-		mConnectedThread = new ConnectedThread(socket);
-		mConnectedThread.start();
-
-		setState(STATE_CONNECTED);
 	}
 
 	/**
@@ -248,13 +221,46 @@ public class BluetoothService extends Service{
 	}
 
 	/**
+	 * Start the ConnectedThread to begin managing a Bluetooth connection
+	 * 
+	 * @param socket
+	 *            The BluetoothSocket on which the connection was made
+	 * @param device
+	 *            The BluetoothDevice that has been connected
+	 */
+	private synchronized void connected(BluetoothSocket socket,
+			BluetoothDevice device) {
+		if (D)
+			Log.d(TAG, "connected");
+
+		// Cancel the thread that completed the connection
+		if (mConnectThread != null) {
+			mConnectThread.cancel();
+			mConnectThread = null;
+		}
+
+		// Cancel any thread currently running a connection
+		if (mConnectedThread != null) {
+			mConnectedThread.cancel();
+			mConnectedThread = null;
+		}
+
+		// Start the thread to manage the connection and perform transmissions
+		mConnectedThread = new ConnectedThread(socket);
+		mConnectedThread.start();
+
+		setState(STATE_CONNECTED);
+	}
+
+	/**
 	 * Indicate that the connection attempt failed and notify the UI Activity.
 	 */
 	private void connectionFailed() {
 		close();
-
 		// Send a failure message back to the Activity
 		mHandler.obtainMessage(MESSAGE_CONNECTION_FAIL, mState, -1).sendToTarget();
+		// restart connection
+		connect(mDevice, 30);
 	}
 
 	/**
@@ -262,9 +268,10 @@ public class BluetoothService extends Service{
 	 */
 	private void connectionLost() {
 		close();
-
 		// Send a failure message back to the Activity
 		mHandler.obtainMessage(MESSAGE_CONNECTION_LOST, mState, -1).sendToTarget();
+		// restart connection
+		connect(mDevice, 5);
 	}
 
 	/**
@@ -312,6 +319,7 @@ public class BluetoothService extends Service{
 							"unable to close() socket during connection failure",
 							e2);
 				}
+				
 				return;
 			}
 

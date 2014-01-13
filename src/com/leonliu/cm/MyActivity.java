@@ -10,13 +10,16 @@ import android.app.Dialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Message;
 import android.util.Log;
 
@@ -48,9 +51,27 @@ public class MyActivity extends Activity {
 	protected BluetoothAdapter mAdapter;
 	protected BluetoothDevice mDevice;
 	protected Set<BluetoothDevice> mDiscoveredDevice;
-	protected BluetoothService btsrv;
+	//protected BluetoothService btsrv;
 	protected String deviceName;
 	protected String deviceMac;
+	protected BluetoothService btService = null;
+	private boolean mBound;
+	
+	ServiceConnection mConnection = new ServiceConnection() {
+
+		@Override
+		public void onServiceConnected(ComponentName name, IBinder service) {
+			btService = ((BluetoothService.MsgBinder)service).getService();
+			mBound = true;
+		}
+
+		@Override
+		public void onServiceDisconnected(ComponentName name) {
+			btService = null;
+			mBound = false;
+		}
+		
+	};
 	
 	public void connectBluetooth() {
 
@@ -263,15 +284,19 @@ public class MyActivity extends Activity {
 	// Activity functions
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
-		btsrv = new BluetoothService(this, bthandler);
 		mDiscoveredDevice = new HashSet<BluetoothDevice>();
 		mAdapter = BluetoothAdapter.getDefaultAdapter();
 		getCfg();
+		bindService(new Intent(this, BluetoothService.class), mConnection, Context.BIND_AUTO_CREATE);
 		super.onCreate(savedInstanceState);
 	}
 
 	@Override
 	protected void onStop() {
+		if (mBound) {
+			unbindService(mConnection);
+			mBound = false;
+		}
 		unregisterReceiver(mReceiver);
 		StopBtRetry = true;
 		super.onStop();
