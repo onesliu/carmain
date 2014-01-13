@@ -11,6 +11,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
@@ -50,10 +51,58 @@ public class BluetoothService extends Service{
 	public static final String DEVICE_NAME = "device_name";
 	public static final String TOAST = "toast";
 
+	//Service support
+	@Override
+	public void onCreate() {
+		// TODO Auto-generated method stub
+		super.onCreate();
+	}
+
+	@Override
+	public void onDestroy() {
+		// TODO Auto-generated method stub
+		super.onDestroy();
+	}
+
 	@Override
 	public IBinder onBind(Intent intent) {
+		return new MsgBinder();
+	}
+	
+	@Override
+	public void onRebind(Intent intent) {
 		// TODO Auto-generated method stub
-		return null;
+		super.onRebind(intent);
+	}
+
+	@Override
+	public boolean onUnbind(Intent intent) {
+		// TODO Auto-generated method stub
+		return super.onUnbind(intent);
+	}
+
+	@Override
+	public void onStart(Intent intent, int startId) {
+		// TODO Auto-generated method stub
+		super.onStart(intent, startId);
+	}
+
+	@Override
+	public int onStartCommand(Intent intent, int flags, int startId) {
+		// TODO Auto-generated method stub
+		return super.onStartCommand(intent, flags, startId);
+	}
+
+	public class MsgBinder extends Binder {
+		public BluetoothService getService() {
+			return BluetoothService.this;
+		}
+	}
+	
+	private MyInterface.OnReadDataListner onReadDataListner;
+	
+	public void setOnReadDataListner(MyInterface.OnReadDataListner l) {
+		onReadDataListner = l;
 	}
 
 	/**
@@ -322,6 +371,11 @@ public class BluetoothService extends Service{
 					// Read from the InputStream
 					bytes = mmInStream.read(buffer);
 
+					// callback
+					if (onReadDataListner != null) {
+						onReadDataListner.onReading(buffer, bytes);
+					}
+					
 					// Send the obtained bytes to the UI Activity
 					mHandler.obtainMessage(MESSAGE_READ, bytes, -1, buffer)
 							.sendToTarget();
