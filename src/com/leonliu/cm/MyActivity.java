@@ -22,6 +22,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
+import android.os.RemoteException;
 import android.util.Log;
 
 public class MyActivity extends Activity {
@@ -64,7 +65,8 @@ public class MyActivity extends Activity {
 
 		@Override
 		public void onServiceConnected(ComponentName name, IBinder service) {
-			btService = ((BluetoothService.MsgBinder)service).getService();
+			BluetoothService.MsgBinder msgbinder = (BluetoothService.MsgBinder) service;
+			btService = msgbinder.getService();
 			rMessenger = new Messenger(service);
 			mBound = true;
 		}
@@ -77,6 +79,16 @@ public class MyActivity extends Activity {
 		
 	};
 	
+	private void bindMessenger() {
+	    Message msg = Message.obtain(null, BluetoothService.MSG_REPLY);
+	    msg.replyTo = mMessenger;
+	    try {
+	        rMessenger.send(msg);
+	    } catch (RemoteException e) {
+	        e.printStackTrace();
+	    }
+	}
+
 	public void connectBluetooth() {
 
 		if (mAdapter == null) {
@@ -292,6 +304,7 @@ public class MyActivity extends Activity {
 		mAdapter = BluetoothAdapter.getDefaultAdapter();
 		getCfg();
 		bindService(new Intent(this, BluetoothService.class), mConnection, Context.BIND_AUTO_CREATE);
+		bindMessenger();
 		super.onCreate(savedInstanceState);
 	}
 

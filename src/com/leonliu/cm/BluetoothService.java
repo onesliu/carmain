@@ -6,36 +6,63 @@ import android.content.Intent;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
 import android.os.Messenger;
+import android.os.RemoteException;
+import android.util.Log;
 
 public class BluetoothService extends Service{
 
 	// Debugging
 	private static final String TAG = "BluetoothService";
 	
+	public static final int MSG_REPLY = 1;
 	private BluetoothThread bthread = null;
 	private Messenger mMessenger;
 	private Messenger rMessenger;
 
 	//public methods
-	public void connect(BluetoothDevice device) {
+	public void connect(BluetoothDevice device, MyInterface.OnReadDataListner listner) {
 		if (bthread != null) {
 			bthread.cancel();
 			bthread = null;
 		}
 		
-		bthread = new BluetoothThread(device, handler, )
+		bthread = new BluetoothThread(device, mHandler, listner);
+		bthread.start();
 	}
 	
 	//message handler
-	Handler handler = new Handler() {
-		
+	Handler rHandler = new Handler() {
+		@Override
+		public void handleMessage(Message msg) {
+			switch (msg.what) {
+			case MSG_REPLY:
+				rMessenger = msg.replyTo;
+				break;
+			}
+			super.handleMessage(msg);
+		}
+	};
+	
+	Handler mHandler = new Handler() {
+		@Override
+		public void handleMessage(Message msg) {
+			if (rMessenger != null) {
+				try {
+					rMessenger.send(msg);
+				}catch(RemoteException e) {
+					Log.e(TAG, "rMessenger send msg to Activity Exception.");
+				}
+			}
+			super.handleMessage(msg);
+		}
 	};
 	
 	//Service support
 	@Override
 	public void onCreate() {
-		mMessenger = new Messenger(handler);
+		mMessenger = new Messenger(rHandler);
 		super.onCreate();
 	}
 
