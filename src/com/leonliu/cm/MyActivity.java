@@ -21,6 +21,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.os.Messenger;
 import android.util.Log;
 
 public class MyActivity extends Activity {
@@ -56,12 +57,15 @@ public class MyActivity extends Activity {
 	protected String deviceMac;
 	protected BluetoothService btService = null;
 	private boolean mBound;
+	private Messenger mMessenger;
+	private Messenger rMessenger;
 	
 	ServiceConnection mConnection = new ServiceConnection() {
 
 		@Override
 		public void onServiceConnected(ComponentName name, IBinder service) {
 			btService = ((BluetoothService.MsgBinder)service).getService();
+			rMessenger = new Messenger(service);
 			mBound = true;
 		}
 
