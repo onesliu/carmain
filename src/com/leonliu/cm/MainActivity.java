@@ -40,7 +40,7 @@ public class MainActivity extends MyActivity {
 	}
 	
 	public void onClickSend(View v) {
-		btsrv.write(inputText.getText().toString().getBytes());
+		btService.write(inputText.getText().toString().getBytes());
 		inputText.setText("");
 	}
 
@@ -53,7 +53,7 @@ public class MainActivity extends MyActivity {
 	
 	public void onStart() {
 		super.onStart();
-		connectBluetooth();
+		findBtDevice();
 	}
 	
 

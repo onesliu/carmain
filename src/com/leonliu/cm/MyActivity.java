@@ -21,8 +21,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
-import android.os.Messenger;
-import android.os.RemoteException;
 import android.util.Log;
 
 public class MyActivity extends Activity {
@@ -53,21 +51,16 @@ public class MyActivity extends Activity {
 	protected BluetoothAdapter mAdapter;
 	protected BluetoothDevice mDevice;
 	protected Set<BluetoothDevice> mDiscoveredDevice;
-	//protected BluetoothService btsrv;
 	protected String deviceName;
 	protected String deviceMac;
 	protected BluetoothService btService = null;
 	private boolean mBound;
-	private Messenger mMessenger;
-	private Messenger rMessenger;
 	
 	ServiceConnection mConnection = new ServiceConnection() {
 
 		@Override
 		public void onServiceConnected(ComponentName name, IBinder service) {
-			BluetoothService.MsgBinder msgbinder = (BluetoothService.MsgBinder) service;
-			btService = msgbinder.getService();
-			rMessenger = new Messenger(service);
+			btService = ((BluetoothService.MsgBinder)service).getService();
 			mBound = true;
 		}
 
@@ -79,18 +72,9 @@ public class MyActivity extends Activity {
 		
 	};
 	
-	private void bindMessenger() {
-	    Message msg = Message.obtain(null, BluetoothService.MSG_REPLY);
-	    msg.replyTo = mMessenger;
-	    try {
-	        rMessenger.send(msg);
-	    } catch (RemoteException e) {
-	        e.printStackTrace();
-	    }
-	}
+	public void findBtDevice() {
 
-	public void connectBluetooth() {
-
+		mAdapter = BluetoothAdapter.getDefaultAdapter();
 		if (mAdapter == null) {
 			AlertToast.showAlert(this, getString(R.string.err_nobluetooth));
 			return;
@@ -98,7 +82,6 @@ public class MyActivity extends Activity {
 		
 		if (!mAdapter.isEnabled()) {
 			Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-			//enableBtIntent.
 			startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
 		}
 		else {
@@ -110,11 +93,12 @@ public class MyActivity extends Activity {
 		deviceName = "";
 		deviceMac = "";
 		saveBtCfg();
-		connectBluetooth();
+		findBtDevice();
 	}
 
 	private void findBtDev() {
-		if (searchPairedDevice()) {
+		Set<BluetoothDevice> pairedDevices = mAdapter.getBondedDevices();
+		if (findSavedDevice(pairedDevices)) {
 			startConnectBt();
 		}
 		else {
@@ -128,21 +112,13 @@ public class MyActivity extends Activity {
 		deviceName = mDevice.getName();
 		deviceMac = mDevice.getAddress();
 		saveBtCfg();
-		btsrv.connect(mDevice);
-	}
-
-	protected boolean searchPairedDevice() {
-		
-		Set<BluetoothDevice> pairedDevices = mAdapter.getBondedDevices();
-	    return findSavedDevice(pairedDevices);
+		btService.connect(mDevice, btHandler, null);
 	}
 
 	private boolean findSavedDevice(Set<BluetoothDevice> devices) {
 		// If there are paired devices
 		if (devices.size() > 0) {
-		    // Loop through paired devices
 			for (BluetoothDevice device : devices) {
-			    // Add the name and address to an array adapter to show in a ListView
 				if (deviceMac != null && device.getAddress().equals(deviceMac)) {
 					if (deviceName != null && !device.getName().equals(deviceName))
 						continue;
@@ -164,7 +140,6 @@ public class MyActivity extends Activity {
 	        if (BluetoothDevice.ACTION_FOUND.equals(action)) {
 	            // Get the BluetoothDevice object from the Intent
 	            BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-	            // Add the name and address to an array adapter to show in a ListView
 	            mDiscoveredDevice.add(device);
 	        }
 	        else if (BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(action)) {
@@ -209,52 +184,27 @@ public class MyActivity extends Activity {
 	protected void readFromBluetooth(byte[] buffer, int len) {
 	}
 	
-	protected final Handler bthandler = new Handler() {
+	protected final Handler btHandler = new Handler() {
 		@Override
 		public void handleMessage(Message msg) {
 			String [] state_msg = getResources().getStringArray(R.array.connect_status);
 
 			switch (msg.what) {
-			case BluetoothService.MESSAGE_READ:
+			case BluetoothThread.MESSAGE_READ:
 				readFromBluetooth((byte[])msg.obj, msg.arg1);
 				break;
-			case BluetoothService.MESSAGE_STATE_CHANGE:
-				if (msg.arg1 == BluetoothService.STATE_CONNECTED) {
+			case BluetoothThread.MESSAGE_STATE_CHANGE:
+				if (msg.arg1 == BluetoothThread.STATE_CONNECTED) {
 					ShowConnectProgressBar(false);
-					if (StopBtRetry == true) {
-						StopBtRetry = false;
-						if (retryBt.isAlive() == false)
-							retryBt.start();
-					}
 				}
 				AlertToast.showAlert(MyActivity.this, state_msg[msg.arg1]);
 				break;
-			case BluetoothService.MESSAGE_CONNECTION_LOST:
-			case BluetoothService.MESSAGE_CONNECTION_FAIL:
+			case BluetoothThread.MESSAGE_CONNECTION_LOST:
+			case BluetoothThread.MESSAGE_CONNECTION_FAIL:
 				ShowConnectProgressBar(false);
 				break;
 			}
 			super.handleMessage(msg);
-		}
-	};
-	
-	protected boolean StopBtRetry = true;
-	Thread retryBt = new Thread() {
-		public void run() {
-			while (StopBtRetry == false) {
-				if (btsrv.getState() == BluetoothService.STATE_NONE) {
-					try {
-						Thread.sleep(5000);
-					} catch (InterruptedException e) {
-						AlertToast.showAlert(MyActivity.this, getString(R.string.err_btdisconnect));
-						break;
-					}
-
-					Log.d("MyActivity", "check bluetooth connection.");
-					if (btsrv.getState() != BluetoothService.STATE_NONE)
-						startConnectBt();
-				}
-			}
 		}
 	};
 	
@@ -301,10 +251,7 @@ public class MyActivity extends Activity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		mDiscoveredDevice = new HashSet<BluetoothDevice>();
-		mAdapter = BluetoothAdapter.getDefaultAdapter();
 		getCfg();
-		bindService(new Intent(this, BluetoothService.class), mConnection, Context.BIND_AUTO_CREATE);
-		bindMessenger();
 		super.onCreate(savedInstanceState);
 	}
 
@@ -315,7 +262,6 @@ public class MyActivity extends Activity {
 			mBound = false;
 		}
 		unregisterReceiver(mReceiver);
-		StopBtRetry = true;
 		super.onStop();
 	}
 
@@ -329,6 +275,10 @@ public class MyActivity extends Activity {
 		filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
 		filter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
 		registerReceiver(mReceiver, filter); // Don't forget to unregister during onDestroy
+
+		Intent srvIntent = new Intent(this, BluetoothService.class);
+		startService(srvIntent);
+		bindService(srvIntent, mConnection, Context.BIND_AUTO_CREATE);
 	}
 
 

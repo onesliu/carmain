@@ -7,9 +7,6 @@ import android.content.Intent;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
-import android.os.Message;
-import android.os.Messenger;
-import android.os.RemoteException;
 import android.util.Log;
 
 @SuppressLint("HandlerLeak")
@@ -18,91 +15,67 @@ public class BluetoothService extends Service{
 	// Debugging
 	private static final String TAG = "BluetoothService";
 	
-	public static final int MSG_REPLY = 1;
 	private BluetoothThread bthread = null;
-	private Messenger mMessenger;
-	private Messenger rMessenger;
 
 	//public methods
-	public BluetoothThread connect(BluetoothDevice device, MyInterface.OnReadDataListner listner) {
+	public BluetoothThread connect(BluetoothDevice device, Handler btHandler, MyInterface.OnReadDataListner listner) {
 		if (bthread != null) {
 			bthread.cancel();
 			bthread = null;
 		}
 		
-		bthread = new BluetoothThread(device, btHandler, listner);
+		bthread = new BluetoothThread(device, listner);
+		bthread.setHandler(btHandler);
 		bthread.start();
 		
 		return bthread;
 	}
 	
-	//message handler
-	Handler rHandler = new Handler() {
-		@Override
-		public void handleMessage(Message msg) {
-			switch (msg.what) {
-			case MSG_REPLY:
-				rMessenger = msg.replyTo;
-				break;
-			}
-			super.handleMessage(msg);
+	public boolean write(byte[] out) {
+		if (bthread != null) {
+			return bthread.write(out);
 		}
-	};
+		return false;
+	}
 	
-	Handler mHandler = new Handler() {
-		@Override
-		public void handleMessage(Message msg) {
-			super.handleMessage(msg);
-		}
-	};
+	public BluetoothThread getBthread() {
+		return bthread;
+	}
 	
-	Handler btHandler = new Handler() {
-		@Override
-		public void handleMessage(Message msg) {
-			if (rMessenger != null) {
-				try {
-					rMessenger.send(msg);
-				}catch(RemoteException e) {
-					Log.e(TAG, "rMessenger send msg to Activity Exception.");
-				}
-			}
-			super.handleMessage(msg);
-		}
-	};
-
 	//Service support
 	@Override
 	public void onCreate() {
-		mMessenger = new Messenger(mHandler);
 		super.onCreate();
 	}
 
 	@Override
 	public void onDestroy() {
-		// TODO Auto-generated method stub
 		super.onDestroy();
 	}
 
 	@Override
 	public IBinder onBind(Intent intent) {
-		return mMessenger.getBinder();
+		Log.i(TAG, "Bluetooth Service onBind, bthread = " + bthread);
+		return new MsgBinder();
 	}
 	
 	@Override
 	public void onRebind(Intent intent) {
-		// TODO Auto-generated method stub
+		Log.i(TAG, "Bluetooth Service onRebind, bthread = " + bthread);
 		super.onRebind(intent);
 	}
 
 	@Override
 	public boolean onUnbind(Intent intent) {
-		// TODO Auto-generated method stub
+		Log.i(TAG, "Bluetooth Service onUnbind, bthread = " + bthread);
+		if (bthread != null)
+			bthread.setHandler(null);
 		return super.onUnbind(intent);
 	}
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		// TODO Auto-generated method stub
+		Log.i(TAG, "Bluetooth Service onStartCommand, bthread = " + bthread);
 		return super.onStartCommand(intent, flags, startId);
 	}
 
