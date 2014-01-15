@@ -1,5 +1,6 @@
 package com.leonliu.cm;
 
+import android.annotation.SuppressLint;
 import android.app.Service;
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
@@ -11,6 +12,7 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.util.Log;
 
+@SuppressLint("HandlerLeak")
 public class BluetoothService extends Service{
 
 	// Debugging
@@ -22,14 +24,16 @@ public class BluetoothService extends Service{
 	private Messenger rMessenger;
 
 	//public methods
-	public void connect(BluetoothDevice device, MyInterface.OnReadDataListner listner) {
+	public BluetoothThread connect(BluetoothDevice device, MyInterface.OnReadDataListner listner) {
 		if (bthread != null) {
 			bthread.cancel();
 			bthread = null;
 		}
 		
-		bthread = new BluetoothThread(device, mHandler, listner);
+		bthread = new BluetoothThread(device, btHandler, listner);
 		bthread.start();
+		
+		return bthread;
 	}
 	
 	//message handler
@@ -48,6 +52,13 @@ public class BluetoothService extends Service{
 	Handler mHandler = new Handler() {
 		@Override
 		public void handleMessage(Message msg) {
+			super.handleMessage(msg);
+		}
+	};
+	
+	Handler btHandler = new Handler() {
+		@Override
+		public void handleMessage(Message msg) {
 			if (rMessenger != null) {
 				try {
 					rMessenger.send(msg);
@@ -58,11 +69,11 @@ public class BluetoothService extends Service{
 			super.handleMessage(msg);
 		}
 	};
-	
+
 	//Service support
 	@Override
 	public void onCreate() {
-		mMessenger = new Messenger(rHandler);
+		mMessenger = new Messenger(mHandler);
 		super.onCreate();
 	}
 
@@ -74,7 +85,7 @@ public class BluetoothService extends Service{
 
 	@Override
 	public IBinder onBind(Intent intent) {
-		return new MsgBinder();
+		return mMessenger.getBinder();
 	}
 	
 	@Override
