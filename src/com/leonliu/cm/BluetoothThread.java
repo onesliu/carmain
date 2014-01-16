@@ -43,18 +43,19 @@ public class BluetoothThread extends Thread {
 	private InputStream mmInStream;
 	private OutputStream mmOutStream;
 	
-	private final MyInterface.OnReadDataListner onReadDataListner;
+	private MyInterface.OnReadDataListner onReadDataListner;
 	
-	public BluetoothThread(BluetoothDevice device, Handler handler, MyInterface.OnReadDataListner listner) {
+	public BluetoothThread(BluetoothDevice device, Handler handler) {
 		mAdapter = BluetoothAdapter.getDefaultAdapter();
 		sHandler = handler;
 		mmDevice = device;
-		onReadDataListner = listner;
 	}
 	
-	public void setHandler(Handler handler) {
+	public void setHandler(Handler handler, MyInterface.OnReadDataListner listner) {
 		mHandler = handler;
+		onReadDataListner = listner;
 		Log.i(this.getClass().getSimpleName(), "Set activity's handler to " + mHandler);
+		Log.i(this.getClass().getSimpleName(), "Set read data listner to " + listner);
 	}
 	
 	private void sleep(int seconds) {
@@ -150,7 +151,7 @@ public class BluetoothThread extends Thread {
 		
 		while (stop == false) {
 
-			//如果蓝牙设备关掉了，服务就彻底停止
+			//如果蓝牙设备关掉了，线程就彻底停止
 			if (mAdapter == null || mAdapter.isEnabled() == false) {
 				sHandler.obtainMessage(BluetoothService.MSG_SERVICE_STOP).sendToTarget();
 				break;

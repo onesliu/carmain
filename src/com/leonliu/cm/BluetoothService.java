@@ -1,5 +1,7 @@
 package com.leonliu.cm;
 
+import java.util.Set;
+
 import android.annotation.SuppressLint;
 import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
@@ -9,7 +11,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Binder;
-import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -21,16 +22,22 @@ public class BluetoothService extends Service{
 	public static final int MSG_SERVICE_STOP = 1;
 	
 	private BluetoothThread bthread = null;
+	private BluetoothDevice mDevice = null;
+	private Handler mbtHandler = null;
+	private MyInterface.OnReadDataListner mListener = null;
+	private PrefConfig config = null;
 
 	//public methods
 	public BluetoothThread connect(BluetoothDevice device, Handler btHandler, MyInterface.OnReadDataListner listner) {
-		if (bthread != null) {
-			bthread.cancel();
-			bthread = null;
-		}
 		
-		bthread = new BluetoothThread(device, threadHandler, listner);
-		bthread.setHandler(btHandler);
+		closeBthread();
+		
+		if (device == null) return null;
+		mDevice = device;
+		mbtHandler = btHandler;
+		mListener = listner;
+		bthread = new BluetoothThread(device, threadHandler);
+		bthread.setHandler(btHandler, listner);
 		bthread.start();
 		
 		return bthread;
@@ -46,6 +53,13 @@ public class BluetoothService extends Service{
 	public BluetoothThread getBthread() {
 		return bthread;
 	}
+
+	private void closeBthread() {
+		if (bthread != null) {
+			bthread.cancel();
+			bthread = null;
+		}
+	}
 	
 	//Handler
 	Handler threadHandler = new Handler() {
@@ -54,10 +68,8 @@ public class BluetoothService extends Service{
 		public void handleMessage(Message msg) {
 			switch (msg.what) {
 			case MSG_SERVICE_STOP:
-				Log.i(this.getClass().getSimpleName(), "Bluetooth adapter closed, service will stop.");
-				if (bthread != null)
-					bthread.cancel();
-				stopSelf();
+				Log.i(this.getClass().getSimpleName(), "Bluetooth adapter closed, BT thread will stop.");
+				closeBthread();
 				break;
 			}
 			super.handleMessage(msg);
@@ -73,6 +85,12 @@ public class BluetoothService extends Service{
 		IntentFilter filter = new IntentFilter();
 		filter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
 		registerReceiver(mReceiver, filter); // Don't forget to unregister during onDestroy
+
+		config = PrefConfig.instance(this);
+		config.getCfg();
+		mDevice = findSavedDevice(config);
+		if (mDevice != null)
+			connect(mDevice, mbtHandler, mListener);
 
 		super.onCreate();
 	}
@@ -100,7 +118,7 @@ public class BluetoothService extends Service{
 	public boolean onUnbind(Intent intent) {
 		Log.i(this.getClass().getSimpleName(), "Bluetooth Service onUnbind, bthread = " + bthread);
 		if (bthread != null)
-			bthread.setHandler(null);
+			bthread.setHandler(null, null);
 		super.onUnbind(intent);
 		return false;
 	}
@@ -127,13 +145,37 @@ public class BluetoothService extends Service{
 			if (BluetoothAdapter.ACTION_STATE_CHANGED.equals(action)) {
 				int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, -1);
 				if (state == BluetoothAdapter.STATE_OFF) {
-					Log.i(this.getClass().getSimpleName(), "Bluetooth adapter closed, service will stop.");
-					if (bthread != null)
-						bthread.cancel();
-					stopSelf();
+					Log.i(this.getClass().getSimpleName(), "Bluetooth adapter closed, BT thread will stop.");
+					closeBthread();
+				}
+				else if (state == BluetoothAdapter.STATE_ON) {
+					Log.i(this.getClass().getSimpleName(), "Bluetooth adapter turned on, BT thread will start.");
+					if (mDevice != null)
+						connect(mDevice, mbtHandler, mListener);
 				}
 			}
 		}
 	};
+	
+	private BluetoothDevice findSavedDevice(PrefConfig config) {
+		
+		BluetoothAdapter mAdapter = BluetoothAdapter.getDefaultAdapter();
+		if (mAdapter == null) return null;
+		
+		if (!mAdapter.isEnabled()) return null;
+		
+		Set<BluetoothDevice> pairedDevices = mAdapter.getBondedDevices();
+		// If there are paired devices
+		if (pairedDevices.size() > 0) {
+			for (BluetoothDevice device : pairedDevices) {
+				if (config.deviceMac != null && device.getAddress().equals(config.deviceMac)) {
+					if (config.deviceName != null && !device.getName().equals(config.deviceName))
+						continue;
+					return device;
+				}
+			}
+		}
+		return null;
+	}
 
 }

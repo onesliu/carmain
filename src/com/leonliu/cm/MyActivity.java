@@ -16,7 +16,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -28,22 +27,7 @@ public class MyActivity extends Activity {
 	
 	//======================================================================
 	// Pref config
-	protected String PREF_CFG = "config";
-	protected SharedPreferences cfgPref;
-	
-	protected final String keyBtDevName = "BluetoothDeviceName";
-	protected final String keyBtDevMac = "BluetoothDeviceMac";
-	
-	protected void getCfg() {
-		cfgPref = getSharedPreferences(PREF_CFG, 0);
-		deviceName = cfgPref.getString(keyBtDevName, "");
-		deviceMac = cfgPref.getString(keyBtDevMac, "");
-	}
-	
-	protected void saveBtCfg() {
-		cfgPref.edit().putString(keyBtDevName, deviceName).commit();
-		cfgPref.edit().putString(keyBtDevMac, deviceMac).commit();
-	}
+	protected PrefConfig config;
 	
 	//======================================================================
 	// Bluetooth service
@@ -51,8 +35,6 @@ public class MyActivity extends Activity {
 	protected BluetoothAdapter mAdapter;
 	protected BluetoothDevice mDevice;
 	protected Set<BluetoothDevice> mDiscoveredDevice;
-	protected String deviceName;
-	protected String deviceMac;
 	protected BluetoothService btService = null;
 	private boolean mBound;
 	
@@ -95,9 +77,9 @@ public class MyActivity extends Activity {
 	}
 	
 	public void reconnectBluetooth() {
-		deviceName = "";
-		deviceMac = "";
-		saveBtCfg();
+		config.deviceName = "";
+		config.deviceMac = "";
+		config.saveBtCfg();
 		findBtDevice();
 	}
 
@@ -114,9 +96,9 @@ public class MyActivity extends Activity {
 	
 	private void startConnectBt() {
 		ShowConnectProgressBar(true);
-		deviceName = mDevice.getName();
-		deviceMac = mDevice.getAddress();
-		saveBtCfg();
+		config.deviceName = mDevice.getName();
+		config.deviceMac = mDevice.getAddress();
+		config.saveBtCfg();
 
 		try {
 			Thread.sleep(1000);
@@ -135,8 +117,8 @@ public class MyActivity extends Activity {
 		// If there are paired devices
 		if (devices.size() > 0) {
 			for (BluetoothDevice device : devices) {
-				if (deviceMac != null && device.getAddress().equals(deviceMac)) {
-					if (deviceName != null && !device.getName().equals(deviceName))
+				if (config.deviceMac != null && device.getAddress().equals(config.deviceMac)) {
+					if (config.deviceName != null && !device.getName().equals(config.deviceName))
 						continue;
 					mDevice = device;
 					return true;
@@ -267,7 +249,8 @@ public class MyActivity extends Activity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		mDiscoveredDevice = new HashSet<BluetoothDevice>();
-		getCfg();
+		config = PrefConfig.instance(this);
+		config.getCfg();
 		Log.i(this.getClass().getSimpleName(), "MyActivity created.");
 		super.onCreate(savedInstanceState);
 	}
