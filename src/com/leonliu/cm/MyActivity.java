@@ -22,6 +22,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.util.Log;
+import android.widget.Toast;
 
 public class MyActivity extends Activity {
 
@@ -112,7 +113,12 @@ public class MyActivity extends Activity {
 		deviceName = mDevice.getName();
 		deviceMac = mDevice.getAddress();
 		saveBtCfg();
-		btService.connect(mDevice, btHandler, null);
+		if (btService != null)
+			btService.connect(mDevice, btHandler, null);
+		else {
+			AlertToast.showAlert(this, getString(R.string.err_btservicestop));
+			ShowConnectProgressBar(false);
+		}
 	}
 
 	private boolean findSavedDevice(Set<BluetoothDevice> devices) {

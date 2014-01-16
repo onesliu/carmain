@@ -45,11 +45,13 @@ public class BluetoothService extends Service{
 	//Service support
 	@Override
 	public void onCreate() {
+		Log.i(TAG, "Bluetooth Service onCreate");
 		super.onCreate();
 	}
 
 	@Override
 	public void onDestroy() {
+		Log.i(TAG, "Bluetooth Service onDestroy");
 		super.onDestroy();
 	}
 

@@ -26,10 +26,9 @@
             </intent-filter>
         </activity>
 
-        <service android:name="BluetoothService" android:exported="false">
-            <intent-filter>
-                <action android:name="com.leonliu.cm.MyActivity" />
-            </intent-filter>
+        <service
+            android:name="BluetoothService"
+            android:exported="false" >
         </service>
     </application>
 
