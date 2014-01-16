@@ -22,7 +22,6 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.util.Log;
-import android.widget.Toast;
 
 public class MyActivity extends Activity {
 
@@ -63,6 +62,7 @@ public class MyActivity extends Activity {
 		public void onServiceConnected(ComponentName name, IBinder service) {
 			btService = ((BluetoothService.MsgBinder)service).getService();
 			mBound = true;
+			findBtDevice();
 		}
 
 		@Override
@@ -75,6 +75,10 @@ public class MyActivity extends Activity {
 	
 	public void findBtDevice() {
 
+		if (btService == null) {
+			AlertToast.showAlert(this, getString(R.string.err_btservicestop));
+			return;
+		}
 		mAdapter = BluetoothAdapter.getDefaultAdapter();
 		if (mAdapter == null) {
 			AlertToast.showAlert(this, getString(R.string.err_nobluetooth));
@@ -113,6 +117,12 @@ public class MyActivity extends Activity {
 		deviceName = mDevice.getName();
 		deviceMac = mDevice.getAddress();
 		saveBtCfg();
+
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+		}
+		
 		if (btService != null)
 			btService.connect(mDevice, btHandler, null);
 		else {
@@ -258,11 +268,19 @@ public class MyActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		mDiscoveredDevice = new HashSet<BluetoothDevice>();
 		getCfg();
+		Log.i(this.getClass().getSimpleName(), "MyActivity created.");
 		super.onCreate(savedInstanceState);
 	}
 
 	@Override
+	protected void onDestroy() {
+		Log.i(this.getClass().getSimpleName(), "MyActivity destory.");
+		super.onDestroy();
+	}
+
+	@Override
 	protected void onStop() {
+		Log.i(this.getClass().getSimpleName(), "MyActivity stoped.");
 		if (mBound) {
 			unbindService(mConnection);
 			mBound = false;
@@ -285,6 +303,7 @@ public class MyActivity extends Activity {
 		Intent srvIntent = new Intent(this, BluetoothService.class);
 		startService(srvIntent);
 		bindService(srvIntent, mConnection, Context.BIND_AUTO_CREATE);
+		Log.i(this.getClass().getSimpleName(), "MyActivity started.");
 	}
 
 

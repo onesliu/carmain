@@ -53,7 +53,6 @@ public class MainActivity extends MyActivity {
 	
 	public void onStart() {
 		super.onStart();
-		findBtDevice();
 	}
 	
 

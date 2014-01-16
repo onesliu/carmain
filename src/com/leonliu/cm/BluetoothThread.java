@@ -13,7 +13,6 @@ import android.util.Log;
 
 public class BluetoothThread extends Thread {
 
-	private static final String TAG = "BluetoothThread";
 	// Unique UUID for this application
 	//private static final UUID SPP_UUID = UUID
 	//		.fromString("00001101-0000-1000-8000-00805F9B34FB");
@@ -37,6 +36,7 @@ public class BluetoothThread extends Thread {
 	private boolean stop = false;
 	private byte []buffer = new byte[1024];
 	private Handler mHandler;
+	private Handler sHandler;
 	private final BluetoothAdapter mAdapter;
 	private final BluetoothDevice mmDevice;
 	private BluetoothSocket mmSocket;
@@ -45,23 +45,24 @@ public class BluetoothThread extends Thread {
 	
 	private final MyInterface.OnReadDataListner onReadDataListner;
 	
-	public BluetoothThread(BluetoothDevice device, MyInterface.OnReadDataListner listner) {
+	public BluetoothThread(BluetoothDevice device, Handler handler, MyInterface.OnReadDataListner listner) {
 		mAdapter = BluetoothAdapter.getDefaultAdapter();
+		sHandler = handler;
 		mmDevice = device;
 		onReadDataListner = listner;
 	}
 	
 	public void setHandler(Handler handler) {
 		mHandler = handler;
-		Log.i(TAG, "Set activity's handler to " + mHandler);
+		Log.i(this.getClass().getSimpleName(), "Set activity's handler to " + mHandler);
 	}
 	
 	private void sleep(int seconds) {
 		try {
-			Log.i(TAG, "sleep " + seconds + " seconds...");
+			Log.i(this.getClass().getSimpleName(), "sleep " + seconds + " seconds...");
 			Thread.sleep(seconds * 1000);
 		} catch (InterruptedException e) {
-			Log.i(TAG, "sleep was interrupted by Exception.");
+			Log.i(this.getClass().getSimpleName(), "sleep was interrupted by Exception.");
 		}
 	}
 
@@ -93,14 +94,17 @@ public class BluetoothThread extends Thread {
 		// Perform the write unsynchronized
 		try {
 			if (mmOutStream != null)
-				mmOutStream.write(buffer);
+				mmOutStream.write(out);
 			else
 				return false;
 		} catch (IOException e) {
-			Log.e(TAG, "mmSocket write stream Exception.");
+			Log.e(this.getClass().getSimpleName(), "mmSocket write stream Exception.");
 			return false;
 		}
 
+		Log.d(this.getClass().getSimpleName(), "mmSocket write " + out.length + " bytes to BT device.");
+		if (mHandler != null)
+			mHandler.obtainMessage(MESSAGE_WRITE, out.length, -1).sendToTarget();
 		return true;
 	}
 	
@@ -115,7 +119,7 @@ public class BluetoothThread extends Thread {
 				mmInStream.close();
 			}
 		}catch(IOException e) {
-			Log.e(TAG, "mmSocket mmInStream close Exception.");
+			Log.e(this.getClass().getSimpleName(), "mmSocket mmInStream close Exception.");
 		}
 		
 		try {
@@ -123,7 +127,7 @@ public class BluetoothThread extends Thread {
 				mmOutStream.close();
 			}
 		}catch(IOException e) {
-			Log.e(TAG, "mmSocket mmOutStream close Exception.");
+			Log.e(this.getClass().getSimpleName(), "mmSocket mmOutStream close Exception.");
 		}
 		
 		try {
@@ -131,7 +135,7 @@ public class BluetoothThread extends Thread {
 				mmSocket.close();
 			}
 		}catch(IOException e) {
-			Log.e(TAG, "mmSocket close Exception.");
+			Log.e(this.getClass().getSimpleName(), "mmSocket close Exception.");
 		}
 		
 		mmInStream = null;
@@ -146,17 +150,23 @@ public class BluetoothThread extends Thread {
 		
 		while (stop == false) {
 
+			//如果蓝牙设备关掉了，服务就彻底停止
+			if (mAdapter == null || mAdapter.isEnabled() == false) {
+				sHandler.obtainMessage(BluetoothService.MSG_SERVICE_STOP).sendToTarget();
+				break;
+			}
+			
 			close();
 			sleep(waittime);
 			
 			// Get a BluetoothSocket for a connection with the
 			// given BluetoothDevice
-			Log.i(TAG, "createRfcommSocketToServiceRecord to " + mmDevice.getName());
+			Log.i(this.getClass().getSimpleName(), "createRfcommSocketToServiceRecord to " + mmDevice.getName());
 			setstate(STATE_CONNECTING);
 			try {
 				mmSocket = mmDevice.createRfcommSocketToServiceRecord(SPP_UUID);
 			} catch (IOException e) {
-				Log.e(TAG, "mmSocket gotten from device Exception.");
+				Log.e(this.getClass().getSimpleName(), "mmSocket gotten from device Exception.");
 				setstate(STATE_NONE);
 				waittime = 30;
 				if (mHandler != null)
@@ -164,7 +174,7 @@ public class BluetoothThread extends Thread {
 				continue;
 			}
 
-			Log.i(TAG, "Begin connect to " + mmDevice.getName());
+			Log.i(this.getClass().getSimpleName(), "Begin connect to " + mmDevice.getName());
 			// Always cancel discovery because it will slow down a connection
 			mAdapter.cancelDiscovery();
 			// Make a connection to the BluetoothSocket
@@ -173,7 +183,7 @@ public class BluetoothThread extends Thread {
 				// successful connection or an exception
 				mmSocket.connect();
 			} catch (IOException e) {
-				Log.e(TAG, "mmSocket connect Exception.");
+				Log.e(this.getClass().getSimpleName(), "mmSocket connect Exception.");
 				setstate(STATE_NONE);
 				waittime = 30;
 				if (mHandler != null)
@@ -181,19 +191,21 @@ public class BluetoothThread extends Thread {
 				continue;
 			}
 
-			Log.i(TAG, "Connected to " + mmDevice.getName());
+			Log.i(this.getClass().getSimpleName(), "Connected to " + mmDevice.getName());
 			// Get the BluetoothSocket input and output streams
 			try {
 				mmInStream = mmSocket.getInputStream();
 				mmOutStream = mmSocket.getOutputStream();
 			} catch (IOException e) {
-				Log.e(TAG, "mmSocket get stream Exception.");
+				Log.e(this.getClass().getSimpleName(), "mmSocket get stream Exception.");
 				setstate(STATE_NONE);
 				waittime = 30;
 				if (mHandler != null)
 					mHandler.obtainMessage(MESSAGE_CONNECTION_LOST).sendToTarget();
 				continue;
 			}
+			
+			setstate(STATE_CONNECTED);
 
 			// Keep listening to the InputStream while connected
 			while (stop == false) {
@@ -210,7 +222,7 @@ public class BluetoothThread extends Thread {
 					if (mHandler != null)
 						mHandler.obtainMessage(MESSAGE_READ, bytes, -1, buffer).sendToTarget();
 				} catch (IOException e) {
-					Log.e(TAG, "mmSocket read stream Exception.");
+					Log.e(this.getClass().getSimpleName(), "mmSocket read stream Exception.");
 					setstate(STATE_NONE);
 					waittime = 5;
 					if (mHandler != null)
