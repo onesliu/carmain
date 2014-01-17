@@ -51,7 +51,7 @@ public class BluetoothThread extends Thread {
 		mmDevice = device;
 	}
 	
-	public void setHandler(Handler handler, MyInterface.OnReadDataListner listner) {
+	public synchronized void setHandler(Handler handler, MyInterface.OnReadDataListner listner) {
 		mHandler = handler;
 		onReadDataListner = listner;
 		Log.i(this.getClass().getSimpleName(), "Set activity's handler to " + mHandler);
@@ -71,9 +71,13 @@ public class BluetoothThread extends Thread {
 		if (mState != state) {
 			mState = state;
 			// Give the new state to the Handler so the UI Activity can update
-			if (mHandler != null)
-				mHandler.obtainMessage(MESSAGE_STATE_CHANGE, state, -1).sendToTarget();
+			handlerSendMsg(MESSAGE_STATE_CHANGE, state, -1, null);
 		}
+	}
+
+	private synchronized void handlerSendMsg(int what, int arg1, int arg2, Object obj) {
+		if (mHandler != null)
+			mHandler.obtainMessage(what, arg1, arg2, obj).sendToTarget();
 	}
 
 	/**
@@ -104,8 +108,7 @@ public class BluetoothThread extends Thread {
 		}
 
 		Log.d(this.getClass().getSimpleName(), "mmSocket write " + out.length + " bytes to BT device.");
-		if (mHandler != null)
-			mHandler.obtainMessage(MESSAGE_WRITE, out.length, -1).sendToTarget();
+		handlerSendMsg(MESSAGE_WRITE, out.length, -1, null);
 		return true;
 	}
 	
@@ -170,8 +173,7 @@ public class BluetoothThread extends Thread {
 				Log.e(this.getClass().getSimpleName(), "mmSocket gotten from device Exception.");
 				setstate(STATE_NONE);
 				waittime = 30;
-				if (mHandler != null)
-					mHandler.obtainMessage(MESSAGE_CONNECTION_FAIL).sendToTarget();
+				handlerSendMsg(MESSAGE_CONNECTION_FAIL, 0, 0, null);
 				continue;
 			}
 
@@ -187,8 +189,7 @@ public class BluetoothThread extends Thread {
 				Log.e(this.getClass().getSimpleName(), "mmSocket connect Exception.");
 				setstate(STATE_NONE);
 				waittime = 30;
-				if (mHandler != null)
-					mHandler.obtainMessage(MESSAGE_CONNECTION_FAIL).sendToTarget();
+				handlerSendMsg(MESSAGE_CONNECTION_FAIL, 0, 0, null);
 				continue;
 			}
 
@@ -201,8 +202,7 @@ public class BluetoothThread extends Thread {
 				Log.e(this.getClass().getSimpleName(), "mmSocket get stream Exception.");
 				setstate(STATE_NONE);
 				waittime = 30;
-				if (mHandler != null)
-					mHandler.obtainMessage(MESSAGE_CONNECTION_LOST).sendToTarget();
+				handlerSendMsg(MESSAGE_CONNECTION_LOST, 0, 0, null);
 				continue;
 			}
 			
@@ -215,19 +215,19 @@ public class BluetoothThread extends Thread {
 					int bytes = mmInStream.read(buffer);
 
 					// callback
-					if (onReadDataListner != null) {
-						onReadDataListner.onReading(buffer, bytes);
+					synchronized (this) {
+						if (onReadDataListner != null) {
+							onReadDataListner.onReading(buffer, bytes);
+						}
 					}
 
 					// Send the obtained bytes to the UI Activity
-					if (mHandler != null)
-						mHandler.obtainMessage(MESSAGE_READ, bytes, -1, buffer).sendToTarget();
+					handlerSendMsg(MESSAGE_READ, bytes, -1, buffer);
 				} catch (IOException e) {
 					Log.e(this.getClass().getSimpleName(), "mmSocket read stream Exception.");
 					setstate(STATE_NONE);
 					waittime = 5;
-					if (mHandler != null)
-						mHandler.obtainMessage(MESSAGE_CONNECTION_LOST).sendToTarget();
+					handlerSendMsg(MESSAGE_CONNECTION_LOST, 0, 0, null);
 					break;
 				}
 			}

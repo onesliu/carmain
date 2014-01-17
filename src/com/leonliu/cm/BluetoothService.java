@@ -30,6 +30,13 @@ public class BluetoothService extends Service{
 	//public methods
 	public BluetoothThread connect(BluetoothDevice device, Handler btHandler, MyInterface.OnReadDataListner listner) {
 		
+		if (bthread != null) {
+			if (bthread.getstate() == BluetoothThread.STATE_CONNECTED) {
+				bthread.setHandler(btHandler, listner);
+				return bthread;
+			}
+		}
+		
 		closeBthread();
 		
 		if (device == null) return null;
@@ -41,6 +48,15 @@ public class BluetoothService extends Service{
 		bthread.start();
 		
 		return bthread;
+	}
+	
+	public boolean isConnected() {
+		if (bthread != null) {
+			if (bthread.getstate() == BluetoothThread.STATE_CONNECTED) {
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	public boolean write(byte[] out) {

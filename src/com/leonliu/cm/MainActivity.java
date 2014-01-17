@@ -1,6 +1,8 @@
 package com.leonliu.cm;
 
 import android.app.Activity;
+import android.bluetooth.BluetoothAdapter;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.View;
@@ -10,6 +12,8 @@ import android.widget.ProgressBar;
 
 public class MainActivity extends Activity {
 
+	public static final int REQUEST_ENABLE_BT = 1;
+	private BluetoothSearch btSearch;
 	private ProgressBar connectProgress;
 	private EditText inputText;
 	private EditText outputText;
@@ -27,21 +31,12 @@ public class MainActivity extends Activity {
 		outputText = (EditText)findViewById(R.id.debugOutput);
 	}
 	
-	protected void ShowConnectProgressBar(boolean start) {
-		super.ShowConnectProgressBar(start);
-		connectProgress.setVisibility((start)?View.VISIBLE:View.GONE);
-	}
-
-	protected void readFromBluetooth(byte[] buffer, int len) {
-		//outputText.
-	}
-
 	public void onConnectBt(View v) {
-		reconnectBluetooth();
+		btSearch.RefindBluetooth();
 	}
 	
 	public void onClickSend(View v) {
-		btService.write(inputText.getText().toString().getBytes());
+		btSearch.btService.write(inputText.getText().toString().getBytes());
 		inputText.setText("");
 	}
 
@@ -53,8 +48,44 @@ public class MainActivity extends Activity {
 	}
 	
 	public void onStart() {
+		BluetoothAdapterEnable();
 		super.onStart();
 	}
 	
+	private void BluetoothAdapterEnable() {
+		btSearch = BluetoothSearch.instance(this);
+		if (BluetoothAdapter.getDefaultAdapter().enable() == false) {
+			Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+			startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+		}
+		else {
+			StartBluetooth();
+		}
+	}
+	
+	public void onActivityResult(int requestCode, int resultCode, Intent data) {
+		if (resultCode == RESULT_CANCELED) return;
+		
+		if (requestCode == REQUEST_ENABLE_BT) {
+			StartBluetooth();
+		}
+	}
+
+	private void StartBluetooth() {
+		btSearch.InitBluetooth();
+		btSearch.setProgressBar(new MyInterface.OnProgressBarShow() {
+			@Override
+			public void ShowProgressBar(boolean show) {
+				connectProgress.setVisibility((show)?View.VISIBLE:View.GONE);
+			}
+		});
+		btSearch.setReadData(new MyInterface.OnReadDataListner() {
+			@Override
+			public void onReading(byte[] buffer, int len) {
+				outputText.getText().append("\r\n" + new String(buffer, 0, len));
+			}
+		});
+		btSearch.FindBtDevice();
+	}
 
 }

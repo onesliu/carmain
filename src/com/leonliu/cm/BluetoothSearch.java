@@ -16,7 +16,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
-import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -38,6 +37,7 @@ public class BluetoothSearch {
 	private boolean mBound;
 	private final Activity a;
 	private MyInterface.OnProgressBarShow progressBar;
+	private MyInterface.OnReadDataListner readData;
 	private static BluetoothSearch self = null;
 
 	// singleton
@@ -53,58 +53,77 @@ public class BluetoothSearch {
 		return self;
 	}
 	
-	// service control
-	ServiceConnection mConnection = new ServiceConnection() {
-
-		@Override
-		public void onServiceConnected(ComponentName name, IBinder service) {
-			btService = ((BluetoothService.MsgBinder)service).getService();
-			mBound = true;
-			findBtDevice();
-		}
-
-		@Override
-		public void onServiceDisconnected(ComponentName name) {
-			btService = null;
-			mBound = false;
-		}
-		
-	};
-	
 	// public methods
 	public void setProgressBar(MyInterface.OnProgressBarShow bar) {
 		progressBar = bar;
 	}
 	
-	public void findBtDevice() {
+	public void setReadData(MyInterface.OnReadDataListner read) {
+		readData = read;
+	}
+
+	public void InitBluetooth() {
+		mDiscoveredDevice = new HashSet<BluetoothDevice>();
+		config = PrefConfig.instance(a);
+		config.getCfg();
+
+		// Register the BroadcastReceiver
+		IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+		filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
+		filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+		filter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
+		a.registerReceiver(mReceiver, filter); // Don't forget to unregister during onDestroy
+
+		Intent srvIntent = new Intent(a, BluetoothService.class);
+		a.startService(srvIntent);
+		a.bindService(srvIntent, mConnection, Context.BIND_AUTO_CREATE);
+	}
+	
+	public void CleanBluetooth() {
+		if (mBound) {
+			a.unbindService(mConnection);
+			mBound = false;
+		}
+		a.unregisterReceiver(mReceiver);
+	}
+
+	// call this method after enable bluetooth adapter, and start bluetooth service
+	public void FindBtDevice() {
 
 		if (btService == null) {
 			AlertToast.showAlert(a, a.getString(R.string.err_btservicestop));
 			return;
 		}
+		
+		if (isBtConnected() == true) {
+			btService.connect(mDevice, btHandler, null);
+			return;
+		}
+
 		mAdapter = BluetoothAdapter.getDefaultAdapter();
 		if (mAdapter == null) {
 			AlertToast.showAlert(a, a.getString(R.string.err_nobluetooth));
 			return;
 		}
 		
-		if (!mAdapter.isEnabled()) {
-			Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-			a.startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
-		}
-		else {
+		if (mAdapter.isEnabled()) {
 			findBtDev();
 		}
 	}
 	
-	public void reconnectBluetooth() {
+	public void RefindBluetooth() {
 		config.setDeviceName("");
 		config.setDeviceMac("");
 		config.saveBtCfg();
-		findBtDevice();
+		FindBtDevice();
 	}
 
 	// private methods
+	private boolean isBtConnected() {
+		if (btService == null) return false;
+		return btService.isConnected();
+	}
+	
 	private void findBtDev() {
 		Set<BluetoothDevice> pairedDevices = mAdapter.getBondedDevices();
 		if (findSavedDevice(pairedDevices)) {
@@ -123,11 +142,6 @@ public class BluetoothSearch {
 		config.setDeviceMac(mDevice.getAddress());
 		config.saveBtCfg();
 
-		try {
-			Thread.sleep(1000);
-		} catch (InterruptedException e) {
-		}
-		
 		if (btService != null)
 			btService.connect(mDevice, btHandler, null);
 		else {
@@ -202,9 +216,6 @@ public class BluetoothSearch {
 	    }
 	};
 
-	protected void readFromBluetooth(byte[] buffer, int len) {
-	}
-	
 	protected final Handler btHandler = new Handler() {
 		@Override
 		public void handleMessage(Message msg) {
@@ -212,7 +223,8 @@ public class BluetoothSearch {
 
 			switch (msg.what) {
 			case BluetoothThread.MESSAGE_READ:
-				readFromBluetooth((byte[])msg.obj, msg.arg1);
+				if (readData != null)
+					readData.onReading((byte[])msg.obj, msg.arg1);
 				break;
 			case BluetoothThread.MESSAGE_STATE_CHANGE:
 				if (msg.arg1 == BluetoothThread.STATE_CONNECTED) {
@@ -270,55 +282,22 @@ public class BluetoothSearch {
 	}
 
 	//======================================================================
-	// Activity functions
-	public void InitBluetooth() {
-		mDiscoveredDevice = new HashSet<BluetoothDevice>();
-		config = PrefConfig.instance(a);
-		config.getCfg();
+	// service control
+	ServiceConnection mConnection = new ServiceConnection() {
 
-		// Register the BroadcastReceiver
-		IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-		filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
-		filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
-		filter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
-		a.registerReceiver(mReceiver, filter); // Don't forget to unregister during onDestroy
+		@Override
+		public void onServiceConnected(ComponentName name, IBinder service) {
+			btService = ((BluetoothService.MsgBinder)service).getService();
+			mBound = true;
+			FindBtDevice();
+		}
 
-		Intent srvIntent = new Intent(a, BluetoothService.class);
-		a.startService(srvIntent);
-		a.bindService(srvIntent, mConnection, Context.BIND_AUTO_CREATE);
-	}
-	
-	public void CleanBluetooth() {
-		if (mBound) {
-			a.unbindService(mConnection);
+		@Override
+		public void onServiceDisconnected(ComponentName name) {
+			btService = null;
 			mBound = false;
 		}
-		a.unregisterReceiver(mReceiver);
-	}
-	
-	public void onCreate(Bundle savedInstanceState) {
-		Log.i(this.getClass().getSimpleName(), "MyActivity created.");
-	}
-
-	public void onDestroy() {
-		Log.i(this.getClass().getSimpleName(), "MyActivity destory.");
-	}
-
-	public void onStop() {
-		Log.i(this.getClass().getSimpleName(), "MyActivity stoped.");
-	}
-
-	public void onStart() {
-		Log.i(this.getClass().getSimpleName(), "MyActivity started.");
-	}
-
-	
-	public void onActivityResult(int requestCode, int resultCode, Intent data) {
-		if (resultCode == RESULT_CANCELED) return;
 		
-		if (requestCode == REQUEST_ENABLE_BT) {
-			findBtDev();
-		}
-	}
-
+	};
+	
 }
