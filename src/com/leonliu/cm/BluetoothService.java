@@ -168,8 +168,8 @@ public class BluetoothService extends Service{
 		// If there are paired devices
 		if (pairedDevices.size() > 0) {
 			for (BluetoothDevice device : pairedDevices) {
-				if (config.deviceMac != null && device.getAddress().equals(config.deviceMac)) {
-					if (config.deviceName != null && !device.getName().equals(config.deviceName))
+				if (config.getDeviceMac() != null && device.getAddress().equals(config.getDeviceMac())) {
+					if (config.getDeviceName() != null && !device.getName().equals(config.getDeviceName()))
 						continue;
 					return device;
 				}

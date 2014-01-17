@@ -1,5 +1,6 @@
 package com.leonliu.cm;
 
+import android.app.Activity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.View;
@@ -7,7 +8,7 @@ import android.widget.EditText;
 import android.widget.ProgressBar;
 
 
-public class MainActivity extends MyActivity {
+public class MainActivity extends Activity {
 
 	private ProgressBar connectProgress;
 	private EditText inputText;

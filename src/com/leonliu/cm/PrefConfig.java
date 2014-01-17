@@ -14,9 +14,6 @@ public final class PrefConfig {
 	private final String keyBtDevName = "BluetoothDeviceName";
 	private final String keyBtDevMac = "BluetoothDeviceMac";
 	
-	public String deviceName;
-	public String deviceMac;
-	
 	private PrefConfig(Context c) {
 		this.c = c;
 	}
@@ -28,15 +25,35 @@ public final class PrefConfig {
 		return self;
 	}
 	
-	public void getCfg() {
+	public synchronized void getCfg() {
 		cfgPref = c.getSharedPreferences(PREF_CFG, 0);
-		deviceName = cfgPref.getString(keyBtDevName, "");
-		deviceMac = cfgPref.getString(keyBtDevMac, "");
+		setDeviceName(cfgPref.getString(keyBtDevName, ""));
+		setDeviceMac(cfgPref.getString(keyBtDevMac, ""));
 	}
 	
-	public void saveBtCfg() {
-		cfgPref.edit().putString(keyBtDevName, deviceName).commit();
-		cfgPref.edit().putString(keyBtDevMac, deviceMac).commit();
+	public synchronized void saveBtCfg() {
+		cfgPref.edit().putString(keyBtDevName, getDeviceName()).commit();
+		cfgPref.edit().putString(keyBtDevMac, getDeviceMac()).commit();
+	}
+	
+	// Dao properties
+	private String deviceName;
+	private String deviceMac;
+	
+	public synchronized String getDeviceName() {
+		return deviceName;
+	}
+
+	public synchronized void setDeviceName(String deviceName) {
+		this.deviceName = deviceName;
+	}
+
+	public synchronized String getDeviceMac() {
+		return deviceMac;
+	}
+
+	public synchronized void setDeviceMac(String deviceMac) {
+		this.deviceMac = deviceMac;
 	}
 
 }
