@@ -78,6 +78,7 @@ public class BluetoothService extends Service{
 	private void closeBthread() {
 		if (bthread != null) {
 			bthread.cancel();
+			bthread.interrupt();
 			bthread = null;
 		}
 	}

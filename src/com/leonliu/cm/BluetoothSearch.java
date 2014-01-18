@@ -35,7 +35,8 @@ public class BluetoothSearch {
 	protected BluetoothDevice mDevice;
 	protected Set<BluetoothDevice> mDiscoveredDevice;
 	protected BluetoothService btService = null;
-	private boolean mBound;
+	private boolean mBound = false;
+	private boolean mRegisted = false;
 	private final Activity a;
 	private MyInterface.OnProgressBarShow progressBar;
 	private MyInterface.OnReadDataListner readData;
@@ -63,12 +64,64 @@ public class BluetoothSearch {
 		readData = read;
 	}
 
-	public void InitBluetooth() {
+	public void UnbindBtService() {
+		if (mBound) {
+			a.unbindService(mConnection);
+			mBound = false;
+		}
+		if (mRegisted) {
+			a.unregisterReceiver(mReceiver);
+			mRegisted = false;
+		}
+	}
+
+	// call this method after enable bluetooth adapter, and start bluetooth service
+	public void StartBtService() {
+
+		mAdapter = BluetoothAdapter.getDefaultAdapter();
+		if (mAdapter == null) {
+			AlertToast.showAlert(a, a.getString(R.string.err_nobluetooth));
+			return;
+		}
+		
+		if (btService == null) {
+			InitBluetooth();
+			return;
+		}
+
+		if (isBtConnected() == true) {
+			btService.connect(mDevice, btHandler, null);
+			return;
+		}
+
+		findBtDev();
+	}
+	
+	public void ReStartBtService() {
+		if (mAdapter == null) {
+			AlertToast.showAlert(a, a.getString(R.string.err_nobluetooth));
+			return;
+		}
+
+		if (btService == null) {
+			AlertToast.showAlert(a, a.getString(R.string.err_btservicestop));
+			return;
+		}
+		btService.close();
+		
+		config.setDeviceMac("");
+		config.setDeviceName("");
+		if (mAdapter.isDiscovering() == false)
+			mAdapter.startDiscovery();
+	}
+	
+	// private methods
+	private void InitBluetooth() {
 		mDiscoveredDevice = new HashSet<BluetoothDevice>();
 		config = PrefConfig.instance(a);
 		config.getCfg();
 		
-		if (btHandler != null)
+		if (btHandler == null)
 			btHandler = new BtHandler(this);
 
 		// Register the BroadcastReceiver
@@ -77,79 +130,13 @@ public class BluetoothSearch {
 		filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
 		filter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
 		a.registerReceiver(mReceiver, filter); // Don't forget to unregister during onDestroy
+		mRegisted = true;
 
 		Intent srvIntent = new Intent(a, BluetoothService.class);
 		a.startService(srvIntent);
 		a.bindService(srvIntent, mConnection, Context.BIND_AUTO_CREATE);
 	}
 	
-	public void CleanBluetooth() {
-		if (mBound) {
-			a.unbindService(mConnection);
-			mBound = false;
-		}
-		a.unregisterReceiver(mReceiver);
-	}
-
-	// call this method after enable bluetooth adapter, and start bluetooth service
-	public void FindBtDevice() {
-
-		if (CheckServiceStatus() == true) return;
-
-		mAdapter = BluetoothAdapter.getDefaultAdapter();
-		if (mAdapter == null) {
-			AlertToast.showAlert(a, a.getString(R.string.err_nobluetooth));
-			return;
-		}
-		
-		if (mAdapter.isEnabled()) {
-			findBtDev();
-		}
-	}
-
-	// 检查服务是否已经连上了蓝牙
-	private boolean CheckServiceStatus() {
-		if (btService == null) {
-			AlertToast.showAlert(a, a.getString(R.string.err_btservicestop));
-			return false;
-		}
-		
-		if (isBtConnected() == true) {
-			btService.connect(mDevice, btHandler, null);
-			return true;
-		}
-		return false;
-	}
-	
-	public void RefindBluetooth() {
-		new RefindHandler(this).RefindBluetooth();
-	}
-	
-	private static class RefindHandler extends Handler {
-		private final WeakReference<BluetoothSearch> w;
-		public RefindHandler(BluetoothSearch s) {
-			w = new WeakReference<BluetoothSearch>(s);
-		}
-		private Runnable timer = new Runnable() {
-			@Override
-			public void run() {
-				if (w.get().CheckServiceStatus() == true)
-					postDelayed(this, 1000);
-				else {
-					removeCallbacks(this);
-					w.get().config.setDeviceName("");
-					w.get().config.setDeviceMac("");
-					//config.saveBtCfg();
-					w.get().FindBtDevice();
-				}
-			}
-		};
-		public void RefindBluetooth() {
-			post(timer);
-		}
-	};
-
-	// private methods
 	private boolean isBtConnected() {
 		if (btService == null) return false;
 		return btService.isConnected();
@@ -327,7 +314,8 @@ public class BluetoothSearch {
 		public void onServiceConnected(ComponentName name, IBinder service) {
 			btService = ((BluetoothService.MsgBinder)service).getService();
 			mBound = true;
-			FindBtDevice();
+
+			findBtDev();
 		}
 
 		@Override

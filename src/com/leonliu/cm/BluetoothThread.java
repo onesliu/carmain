@@ -163,6 +163,9 @@ public class BluetoothThread extends Thread {
 			
 			close();
 			sleep(waittime);
+			if (stop == true) {
+				break;
+			}
 			
 			// Get a BluetoothSocket for a connection with the
 			// given BluetoothDevice
@@ -170,7 +173,7 @@ public class BluetoothThread extends Thread {
 			setstate(STATE_CONNECTING);
 			try {
 				mmSocket = mmDevice.createRfcommSocketToServiceRecord(SPP_UUID);
-			} catch (IOException e) {
+			} catch (Exception e) {
 				Log.e(this.getClass().getSimpleName(), "mmSocket gotten from device Exception.");
 				setstate(STATE_NONE);
 				waittime = 30;
@@ -186,7 +189,7 @@ public class BluetoothThread extends Thread {
 				// This is a blocking call and will only return on a
 				// successful connection or an exception
 				mmSocket.connect();
-			} catch (IOException e) {
+			} catch (Exception e) {
 				Log.e(this.getClass().getSimpleName(), "mmSocket connect Exception.");
 				setstate(STATE_NONE);
 				waittime = 30;
@@ -199,7 +202,7 @@ public class BluetoothThread extends Thread {
 			try {
 				mmInStream = mmSocket.getInputStream();
 				mmOutStream = mmSocket.getOutputStream();
-			} catch (IOException e) {
+			} catch (Exception e) {
 				Log.e(this.getClass().getSimpleName(), "mmSocket get stream Exception.");
 				setstate(STATE_NONE);
 				waittime = 30;
@@ -224,7 +227,7 @@ public class BluetoothThread extends Thread {
 
 					// Send the obtained bytes to the UI Activity
 					handlerSendMsg(MESSAGE_READ, bytes, -1, buffer);
-				} catch (IOException e) {
+				} catch (Exception e) {
 					Log.e(this.getClass().getSimpleName(), "mmSocket read stream Exception.");
 					setstate(STATE_NONE);
 					waittime = 5;
@@ -236,6 +239,7 @@ public class BluetoothThread extends Thread {
 		
 		close();
 		setstate(STATE_NONE);
+		Log.i(this.getClass().getSimpleName(), "Bluetooth Thread stoped.");
 	}
 
 }

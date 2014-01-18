@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.widget.EditText;
@@ -23,6 +24,7 @@ public class MainActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		findAllView();
+		Log.d(this.getClass().getSimpleName(), "Activity onCreate.");
 	}
 	
 	private void findAllView() {
@@ -32,11 +34,11 @@ public class MainActivity extends Activity {
 	}
 	
 	public void onConnectBt(View v) {
-		btSearch.RefindBluetooth();
+		btSearch.ReStartBtService();
 	}
 	
 	public void onClickSend(View v) {
-		btSearch.btService.write(inputText.getText().toString().getBytes());
+		btSearch.btService.write((inputText.getText().toString()+ "\r\n").getBytes());
 		inputText.setText("");
 	}
 
@@ -47,11 +49,31 @@ public class MainActivity extends Activity {
 		return true;
 	}
 	
+	@Override
 	public void onStart() {
+		Log.d(this.getClass().getSimpleName(), "Activity onStart.");
 		BluetoothAdapterEnable();
 		super.onStart();
 	}
 	
+	@Override
+	protected void onStop() {
+		Log.d(this.getClass().getSimpleName(), "Activity onStop.");
+		BluetoothSearch.instance(this).UnbindBtService();
+		super.onStop();
+	}
+
+	@Override
+	public void onActivityResult(int requestCode, int resultCode, Intent data) {
+		Log.d(this.getClass().getSimpleName(), "Activity onActivityResult.");
+
+		if (resultCode == RESULT_CANCELED) return;
+		
+		if (requestCode == REQUEST_ENABLE_BT) {
+			StartBluetooth();
+		}
+	}
+
 	private void BluetoothAdapterEnable() {
 		btSearch = BluetoothSearch.instance(this);
 		if (BluetoothAdapter.getDefaultAdapter().enable() == false) {
@@ -63,16 +85,7 @@ public class MainActivity extends Activity {
 		}
 	}
 	
-	public void onActivityResult(int requestCode, int resultCode, Intent data) {
-		if (resultCode == RESULT_CANCELED) return;
-		
-		if (requestCode == REQUEST_ENABLE_BT) {
-			StartBluetooth();
-		}
-	}
-
 	private void StartBluetooth() {
-		btSearch.InitBluetooth();
 		btSearch.setProgressBar(new MyInterface.OnProgressBarShow() {
 			@Override
 			public void ShowProgressBar(boolean show) {
@@ -85,7 +98,7 @@ public class MainActivity extends Activity {
 				outputText.getText().append(new String(buffer, 0, len) + System.getProperty("line.separator"));
 			}
 		});
-		btSearch.FindBtDevice();
+		btSearch.StartBtService();
 	}
 
 }
