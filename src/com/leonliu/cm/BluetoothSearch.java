@@ -1,5 +1,6 @@
 package com.leonliu.cm;
 
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.Set;
@@ -66,6 +67,9 @@ public class BluetoothSearch {
 		mDiscoveredDevice = new HashSet<BluetoothDevice>();
 		config = PrefConfig.instance(a);
 		config.getCfg();
+		
+		if (btHandler != null)
+			btHandler = new BtHandler(this);
 
 		// Register the BroadcastReceiver
 		IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
@@ -118,21 +122,25 @@ public class BluetoothSearch {
 	}
 	
 	public void RefindBluetooth() {
-		new RefindHandler().RefindBluetooth();
+		new RefindHandler(this).RefindBluetooth();
 	}
 	
-	private class RefindHandler extends Handler {
+	private static class RefindHandler extends Handler {
+		private final WeakReference<BluetoothSearch> w;
+		public RefindHandler(BluetoothSearch s) {
+			w = new WeakReference<BluetoothSearch>(s);
+		}
 		private Runnable timer = new Runnable() {
 			@Override
 			public void run() {
-				if (CheckServiceStatus() == true)
+				if (w.get().CheckServiceStatus() == true)
 					postDelayed(this, 1000);
 				else {
 					removeCallbacks(this);
-					config.setDeviceName("");
-					config.setDeviceMac("");
+					w.get().config.setDeviceName("");
+					w.get().config.setDeviceMac("");
 					//config.saveBtCfg();
-					FindBtDevice();
+					w.get().FindBtDevice();
 				}
 			}
 		};
@@ -239,27 +247,33 @@ public class BluetoothSearch {
 	    }
 	};
 
-	protected final Handler btHandler = new Handler() {
+	protected BtHandler btHandler = null;
+	
+	protected static class BtHandler extends Handler {
+		private final WeakReference<BluetoothSearch> w;
+		public BtHandler(BluetoothSearch s) {
+			w = new WeakReference<BluetoothSearch>(s);
+		}
 		@Override
 		public void handleMessage(Message msg) {
-			String [] state_msg = a.getResources().getStringArray(R.array.connect_status);
+			String [] state_msg = w.get().a.getResources().getStringArray(R.array.connect_status);
 
 			switch (msg.what) {
 			case BluetoothThread.MESSAGE_READ:
-				if (readData != null)
-					readData.onReading((byte[])msg.obj, msg.arg1);
+				if (w.get().readData != null)
+					w.get().readData.onReading((byte[])msg.obj, msg.arg1);
 				break;
 			case BluetoothThread.MESSAGE_STATE_CHANGE:
 				if (msg.arg1 == BluetoothThread.STATE_CONNECTED) {
-					if (progressBar != null)
-						progressBar.ShowProgressBar(false);
+					if (w.get().progressBar != null)
+						w.get().progressBar.ShowProgressBar(false);
 				}
-				AlertToast.showAlert(a, state_msg[msg.arg1]);
+				AlertToast.showAlert(w.get().a, state_msg[msg.arg1]);
 				break;
 			case BluetoothThread.MESSAGE_CONNECTION_LOST:
 			case BluetoothThread.MESSAGE_CONNECTION_FAIL:
-				if (progressBar != null)
-					progressBar.ShowProgressBar(false);
+				if (w.get().progressBar != null)
+					w.get().progressBar.ShowProgressBar(false);
 				break;
 			}
 			super.handleMessage(msg);
