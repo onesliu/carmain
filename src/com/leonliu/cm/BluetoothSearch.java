@@ -122,6 +122,7 @@ public class BluetoothSearch {
 	}
 	
 	public void RefindBluetooth() {
+		btService.close();
 		new RefindHandler(this).RefindBluetooth();
 	}
 	
