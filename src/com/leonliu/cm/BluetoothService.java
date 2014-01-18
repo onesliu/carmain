@@ -69,6 +69,11 @@ public class BluetoothService extends Service{
 	public BluetoothThread getBthread() {
 		return bthread;
 	}
+	
+	public void close() {
+		Log.i(this.getClass().getSimpleName(), "User is closing BT thread.");
+		closeBthread();
+	}
 
 	private void closeBthread() {
 		if (bthread != null) {

@@ -90,15 +90,7 @@ public class BluetoothSearch {
 	// call this method after enable bluetooth adapter, and start bluetooth service
 	public void FindBtDevice() {
 
-		if (btService == null) {
-			AlertToast.showAlert(a, a.getString(R.string.err_btservicestop));
-			return;
-		}
-		
-		if (isBtConnected() == true) {
-			btService.connect(mDevice, btHandler, null);
-			return;
-		}
+		if (CheckServiceStatus() == true) return;
 
 		mAdapter = BluetoothAdapter.getDefaultAdapter();
 		if (mAdapter == null) {
@@ -110,13 +102,44 @@ public class BluetoothSearch {
 			findBtDev();
 		}
 	}
+
+	// 检查服务是否已经连上了蓝牙
+	private boolean CheckServiceStatus() {
+		if (btService == null) {
+			AlertToast.showAlert(a, a.getString(R.string.err_btservicestop));
+			return false;
+		}
+		
+		if (isBtConnected() == true) {
+			btService.connect(mDevice, btHandler, null);
+			return true;
+		}
+		return false;
+	}
 	
 	public void RefindBluetooth() {
-		config.setDeviceName("");
-		config.setDeviceMac("");
-		config.saveBtCfg();
-		FindBtDevice();
+		new RefindHandler().RefindBluetooth();
 	}
+	
+	private class RefindHandler extends Handler {
+		private Runnable timer = new Runnable() {
+			@Override
+			public void run() {
+				if (CheckServiceStatus() == true)
+					postDelayed(this, 1000);
+				else {
+					removeCallbacks(this);
+					config.setDeviceName("");
+					config.setDeviceMac("");
+					//config.saveBtCfg();
+					FindBtDevice();
+				}
+			}
+		};
+		public void RefindBluetooth() {
+			post(timer);
+		}
+	};
 
 	// private methods
 	private boolean isBtConnected() {
@@ -261,6 +284,7 @@ public class BluetoothSearch {
             		   for (BluetoothDevice device : mDiscoveredDevice) {
             			   if (i == which) {
             				   mDevice = device;
+            				   //蓝牙设备配对
             				   if (mDevice.getBondState() == BluetoothDevice.BOND_NONE) {
             					 	//利用反射方法调用BluetoothDevice.createBond(BluetoothDevice remoteDevice);  
             	                    Method createBondMethod;

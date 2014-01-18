@@ -71,7 +71,8 @@ public class BluetoothThread extends Thread {
 		if (mState != state) {
 			mState = state;
 			// Give the new state to the Handler so the UI Activity can update
-			handlerSendMsg(MESSAGE_STATE_CHANGE, state, -1, null);
+			if (mHandler != null)
+				mHandler.obtainMessage(MESSAGE_STATE_CHANGE, state, -1).sendToTarget();
 		}
 	}
 

@@ -82,7 +82,7 @@ public class MainActivity extends Activity {
 		btSearch.setReadData(new MyInterface.OnReadDataListner() {
 			@Override
 			public void onReading(byte[] buffer, int len) {
-				outputText.getText().append("\r\n" + new String(buffer, 0, len));
+				outputText.getText().append(new String(buffer, 0, len) + System.getProperty("line.separator"));
 			}
 		});
 		btSearch.FindBtDevice();
