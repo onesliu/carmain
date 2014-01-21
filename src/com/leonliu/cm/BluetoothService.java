@@ -2,9 +2,6 @@ package com.leonliu.cm;
 
 import java.util.Set;
 
-import com.leonliu.cm.obd.ObdInterface;
-import com.leonliu.cm.obd.ObdModule;
-
 import android.annotation.SuppressLint;
 import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
@@ -19,17 +16,23 @@ import android.os.IBinder;
 import android.os.Message;
 import android.util.Log;
 
+import com.leonliu.cm.obd.ObdContext;
+import com.leonliu.cm.obd.ObdInterface.CreateObdModule;
+import com.leonliu.cm.obd.ObdInterface.FlowDataInteface;
+import com.leonliu.cm.obd.OnObdRealtime;
+
 @SuppressLint("HandlerLeak")
 public class BluetoothService extends Service{
 
-	public static final int MSG_SERVICE_STOP = 1;
+	public static final int MSG_SERVICE_STOP = 100;
 	
 	private BluetoothThread bthread = null;
 	private BluetoothDevice mDevice = null;
 	private Handler mbtHandler = null;
 	private MyInterface.OnReadDataListner mListener = null;
 	private PrefConfig config = null;
-	ObdInterface.FlowDataInteface obdRealtime;
+	private CreateObdModule obdFactory = null;
+	private FlowDataInteface onRealtime = null;
 
 	//public methods
 	public BluetoothThread connect(BluetoothDevice device, Handler btHandler, MyInterface.OnReadDataListner listner) {
@@ -98,7 +101,13 @@ public class BluetoothService extends Service{
 				closeBthread();
 				break;
 			case BluetoothThread.MESSAGE_READ:
-				obdRealtime.OnDataListener((byte[])msg.obj, msg.arg1);
+				onRealtime.OnDataListener((byte[])msg.obj, msg.arg1);
+				break;
+			case BluetoothThread.MESSAGE_STATE_CHANGE:
+				if (msg.arg1 == BluetoothThread.STATE_CONNECTED)
+					onRealtime.StartGetData();
+				else
+					onRealtime.StopGetData();
 				break;
 			}
 			super.handleMessage(msg);
@@ -119,8 +128,8 @@ public class BluetoothService extends Service{
 		config.getCfg();
 		mDevice = findSavedDevice(config);
 		
-		obdRealtime = ObdModule
-
+		obdFactory = ObdContext.CreateObdFactory("Est527");
+		onRealtime = obdFactory.CreateRealtime(new OnObdRealtime());
 
 		if (mDevice != null)
 			connect(mDevice, mbtHandler, mListener);
