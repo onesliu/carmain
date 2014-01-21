@@ -19,7 +19,7 @@ import android.util.Log;
 import com.leonliu.cm.obd.ObdContext;
 import com.leonliu.cm.obd.ObdInterface.CreateObdModule;
 import com.leonliu.cm.obd.ObdInterface.FlowDataInteface;
-import com.leonliu.cm.obd.OnObdRealtime;
+import com.leonliu.cm.obd.OnObdHandler;
 
 @SuppressLint("HandlerLeak")
 public class BluetoothService extends Service{
@@ -129,7 +129,7 @@ public class BluetoothService extends Service{
 		mDevice = findSavedDevice(config);
 		
 		obdFactory = ObdContext.CreateObdFactory("Est527");
-		onRealtime = obdFactory.CreateRealtime(new OnObdRealtime());
+		onRealtime = obdFactory.CreateRealtime(new OnObdHandler());
 
 		if (mDevice != null)
 			connect(mDevice, mbtHandler, mListener);

@@ -219,15 +219,18 @@ public class BluetoothThread extends Thread {
 					// Read from the InputStream
 					int bytes = mmInStream.read(buffer);
 
+					byte[] tbuf = new byte[bytes];
+					System.arraycopy(buffer, 0, tbuf, 0, bytes);
+
 					// callback
 					synchronized (this) {
 						if (onReadDataListner != null) {
-							onReadDataListner.onReading(buffer, bytes);
+							onReadDataListner.onReading(tbuf, bytes);
 						}
 					}
 
 					// Send the obtained bytes to the UI Activity
-					handlerSendMsg(MESSAGE_READ, bytes, -1, buffer);
+					handlerSendMsg(MESSAGE_READ, bytes, -1, tbuf);
 				} catch (Exception e) {
 					Log.e(this.getClass().getSimpleName(), "mmSocket read stream Exception.");
 					setstate(STATE_NONE);
