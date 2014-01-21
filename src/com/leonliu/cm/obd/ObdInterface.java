@@ -1,12 +1,21 @@
 package com.leonliu.cm.obd;
 
+import java.lang.reflect.Constructor;
+
+import android.os.Handler;
+
 public class ObdInterface {
+	
+	public static final int MSG_OBD_SENDFAIL = 200;
 	
 	public interface FlowDataInteface {
 		void OnDataListener(byte []data, int len);
-		void StartGetData();
+		void StartGetData(ObdSendAdapter out, Handler msgHandler);
 		void StopGetData();
-		void SendExpect(int type);
+	}
+	
+	public interface ObdSendAdapter {
+		boolean SendData(String buf);
 	}
 	
 	public interface OnObdData {
@@ -20,20 +29,26 @@ public class ObdInterface {
 		void OnMpg(double mpg);		//瞬时油耗
 		void OnAvm(double avm);		//平均油耗
 		
+		// Statistic Data
+		void OnDst(double distance);	//本次行驶里程
+		void OnTDst(double distance);	//总里程
+		void OnFue(double liter);		//本次耗油量
+		void OnTFue(double liter);		//累计耗油量
+		
 		// Diagnosis Data
 		void OnDiagnosis(String []codes);
 	}
 	
-	public static FlowDataInteface CreateObdModule(String model) {
+	public static FlowDataInteface CreateObdModule(String model, OnObdData ObdData) {
 		FlowDataInteface m = null;
 		String pkg = ObdInterface.class.getPackage().getName();
 		try {
-			m = (FlowDataInteface) Class.forName(pkg + "." + model + "_Module").newInstance();
-		} catch (IllegalAccessException e) {
-			e.printStackTrace();
-		} catch (InstantiationException e) {
-			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
+			Class cls = Class.forName(pkg + "." + model + "_Module");
+			Class[] paramTypes = new Class[]{OnObdData.class};
+			Object[] params = new Object[]{ObdData};
+			Constructor con = cls.getConstructor(paramTypes); 
+			m = (FlowDataInteface)con.newInstance(params);
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		

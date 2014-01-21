@@ -4,22 +4,25 @@ import com.leonliu.cm.obd.ObdInterface.OnObdData;
 
 public class OnObdHandler implements OnObdData {
 
+	private ObdDao dao = new ObdDao();
+
+	public ObdDao getDao() {
+		return dao;
+	}
+	
 	@Override
 	public void OnBat(double voltage) {
-		// TODO Auto-generated method stub
-		
+		dao.setBat(voltage);
 	}
 
 	@Override
 	public void OnRpm(int rpm) {
-		// TODO Auto-generated method stub
-		
+		dao.setRpm(rpm);
 	}
 
 	@Override
 	public void OnVss(int vss) {
-		// TODO Auto-generated method stub
-		
+		dao.setVss(vss);
 	}
 
 	@Override
@@ -54,6 +57,30 @@ public class OnObdHandler implements OnObdData {
 
 	@Override
 	public void OnDiagnosis(String[] codes) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void OnDst(double distance) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void OnTDst(double distance) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void OnFue(double liter) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void OnTFue(double liter) {
 		// TODO Auto-generated method stub
 		
 	}

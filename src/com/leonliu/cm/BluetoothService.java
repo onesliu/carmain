@@ -16,9 +16,9 @@ import android.os.IBinder;
 import android.os.Message;
 import android.util.Log;
 
-import com.leonliu.cm.obd.ObdContext;
-import com.leonliu.cm.obd.ObdInterface.CreateObdModule;
+import com.leonliu.cm.obd.ObdInterface;
 import com.leonliu.cm.obd.ObdInterface.FlowDataInteface;
+import com.leonliu.cm.obd.ObdInterface.ObdSendAdapter;
 import com.leonliu.cm.obd.OnObdHandler;
 
 @SuppressLint("HandlerLeak")
@@ -31,8 +31,7 @@ public class BluetoothService extends Service{
 	private Handler mbtHandler = null;
 	private MyInterface.OnReadDataListner mListener = null;
 	private PrefConfig config = null;
-	private CreateObdModule obdFactory = null;
-	private FlowDataInteface onRealtime = null;
+	private FlowDataInteface ObdData = null;
 
 	//public methods
 	public BluetoothThread connect(BluetoothDevice device, Handler btHandler, MyInterface.OnReadDataListner listner) {
@@ -92,7 +91,6 @@ public class BluetoothService extends Service{
 	
 	//Handler
 	Handler threadHandler = new Handler() {
-
 		@Override
 		public void handleMessage(Message msg) {
 			switch (msg.what) {
@@ -101,16 +99,36 @@ public class BluetoothService extends Service{
 				closeBthread();
 				break;
 			case BluetoothThread.MESSAGE_READ:
-				onRealtime.OnDataListener((byte[])msg.obj, msg.arg1);
+				ObdData.OnDataListener((byte[])msg.obj, msg.arg1);
 				break;
 			case BluetoothThread.MESSAGE_STATE_CHANGE:
-				if (msg.arg1 == BluetoothThread.STATE_CONNECTED)
-					onRealtime.StartGetData();
-				else
-					onRealtime.StopGetData();
+				if (msg.arg1 == BluetoothThread.STATE_CONNECTED) {
+					ObdData.StartGetData(new ObdSendAdapter() {
+						@Override
+						public boolean SendData(String buf) {
+							return write(buf.getBytes());
+						}
+					}, ObdMsg);
+				}
+				else {
+					ObdData.StopGetData();
+				}
 				break;
 			}
 			super.handleMessage(msg);
+		}
+	};
+	
+	Handler ObdMsg = new Handler() {
+		@Override
+		public void handleMessage(Message msg) {
+			switch (msg.what) {
+			case ObdInterface.MSG_OBD_SENDFAIL:
+				Log.i(this.getClass().getSimpleName(), "Obd data get error, BT thread will stop.");
+				ObdData.StopGetData();
+				closeBthread();
+				break;
+			}
 		}
 	};
 	
@@ -128,8 +146,7 @@ public class BluetoothService extends Service{
 		config.getCfg();
 		mDevice = findSavedDevice(config);
 		
-		obdFactory = ObdContext.CreateObdFactory("Est527");
-		onRealtime = obdFactory.CreateRealtime(new OnObdHandler());
+		ObdData = ObdInterface.CreateObdModule("Est527", new OnObdHandler());
 
 		if (mDevice != null)
 			connect(mDevice, mbtHandler, mListener);

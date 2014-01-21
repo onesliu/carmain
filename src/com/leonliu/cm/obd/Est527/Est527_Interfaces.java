@@ -1,25 +1,34 @@
 package com.leonliu.cm.obd.Est527;
 
+import com.leonliu.cm.obd.ObdInterface.OnObdData;
+
+
 public class Est527_Interfaces {
 
-	public static final int OBD_REALTIME = 1;
-	public static final int OBD_STATISTIC = 2;
-	public static final int OBD_DIAGNOSIS = 3;
-	public static final int OBD_DRIVERHABIT = 4;
-	public static final int OBD_INFOMATION = 5;
+	public static final String OBD_REALTIME = "Realtime";
+	public static final String OBD_STATISTIC = "Statistic";
+	public static final String OBD_DIAGNOSIS = "Diagnosis";
+	public static final String OBD_DRIVERHABIT = "DriverHabit";
+	public static final String OBD_INFOMATION = "Infomation";
 	
 	public interface ModuleHandle {
-		void OnInput(String []colums);
+		void OnInput(String []colums, OnObdData onData);
 	}
 	
-	public ModuleHandle CreateModuleHandle(int type) {
-		switch(type) {
-		case OBD_REALTIME:
-			break;
-		case OBD_STATISTIC:
-			break;
+	public static ModuleHandle CreateModuleHandle(String model) {
+		ModuleHandle m = null;
+		String pkg = Est527_Interfaces.class.getPackage().getName();
+		try {
+			m = (ModuleHandle) Class.forName(pkg + "." + "Est527_" + model).newInstance();
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+		} catch (InstantiationException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
 		}
 		
-		return null;
+		return m;
 	}
+	
 }
