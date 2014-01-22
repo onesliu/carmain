@@ -3,11 +3,13 @@ package com.leonliu.cm.obd;
 import java.lang.reflect.Constructor;
 
 import android.os.Handler;
+import android.util.Log;
 
 public class ObdInterface {
 	
 	public static final int MSG_OBD_SENDFAIL = 200;
 	public static final int MSG_OBD_PARSEFAIL = 201;
+	public static final int MSG_OBD_READ = 202;
 	
 	public interface FlowDataInteface {
 		void OnDataListener(byte []data, int len);
@@ -44,11 +46,11 @@ public class ObdInterface {
 		FlowDataInteface m = null;
 		String pkg = ObdInterface.class.getPackage().getName();
 		try {
-			Class cls = Class.forName(pkg + "." + model + "_Module");
-			Class[] paramTypes = new Class[]{OnObdData.class};
-			Object[] params = new Object[]{ObdData};
-			Constructor con = cls.getConstructor(paramTypes); 
-			m = (FlowDataInteface)con.newInstance(params);
+			Class cls = Class.forName(pkg + "." + model + "." + model + "_Module");
+			Log.i("CreateObdModule", cls.getName());
+			Constructor[] cons = cls.getConstructors();
+			Constructor con = (Constructor)cls.getConstructor(OnObdData.class);
+			m = (FlowDataInteface)con.newInstance(ObdData);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

@@ -5,6 +5,9 @@ import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.leonliu.cm.obd.ObdDao;
+import com.leonliu.cm.obd.ObdInterface;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -246,9 +249,12 @@ public class BluetoothSearch {
 			String [] state_msg = w.get().a.getResources().getStringArray(R.array.connect_status);
 
 			switch (msg.what) {
-			case BluetoothThread.MESSAGE_READ:
+			case ObdInterface.MSG_OBD_READ:
 				if (w.get().readData != null)
-					w.get().readData.onReading((byte[])msg.obj, msg.arg1);
+					w.get().readData.onReading((ObdDao) msg.obj);
+				break;
+			case ObdInterface.MSG_OBD_PARSEFAIL:
+				AlertToast.showAlert(w.get().a, "解析出错");
 				break;
 			case BluetoothThread.MESSAGE_STATE_CHANGE:
 				if (msg.arg1 == BluetoothThread.STATE_CONNECTED) {

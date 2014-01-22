@@ -16,6 +16,7 @@ import android.os.IBinder;
 import android.os.Message;
 import android.util.Log;
 
+import com.leonliu.cm.obd.ObdDao;
 import com.leonliu.cm.obd.ObdInterface;
 import com.leonliu.cm.obd.ObdInterface.FlowDataInteface;
 import com.leonliu.cm.obd.ObdInterface.ObdSendAdapter;
@@ -32,6 +33,7 @@ public class BluetoothService extends Service{
 	private MyInterface.OnReadDataListner mListener = null;
 	private PrefConfig config = null;
 	private FlowDataInteface ObdData = null;
+	private OnObdHandler ObdHandler = null;
 
 	//public methods
 	public BluetoothThread connect(BluetoothDevice device, Handler btHandler, MyInterface.OnReadDataListner listner) {
@@ -80,12 +82,24 @@ public class BluetoothService extends Service{
 		Log.i(this.getClass().getSimpleName(), "User is closing BT thread.");
 		closeBthread();
 	}
+	
+	public ObdDao getOdbDao() {
+		if (ObdHandler != null)
+			return ObdHandler.getDao();
+		return null;
+	}
 
 	private void closeBthread() {
 		if (bthread != null) {
 			bthread.cancel();
 			bthread.interrupt();
 			bthread = null;
+		}
+	}
+	
+	private void ReSendMsg(Message msg, Object obj) {
+		if (mbtHandler != null) {
+			mbtHandler.obtainMessage(msg.what, msg.arg1, msg.arg2, obj).sendToTarget();
 		}
 	}
 	
@@ -113,11 +127,9 @@ public class BluetoothService extends Service{
 				else {
 					ObdData.StopGetData();
 				}
-				//break;
+				break;
 			default:
-				if (mbtHandler != null) {
-					mbtHandler.sendMessage(msg);
-				}
+				ReSendMsg(msg, null);
 			}
 			super.handleMessage(msg);
 		}
@@ -137,6 +149,11 @@ public class BluetoothService extends Service{
 					mbtHandler.sendMessage(msg);
 				}
 				break;
+			case ObdInterface.MSG_OBD_READ:
+				ReSendMsg(msg, ObdHandler.getDao());
+				break;
+			default:
+				ReSendMsg(msg, null);
 			}
 		}
 	};
@@ -154,8 +171,9 @@ public class BluetoothService extends Service{
 		config = PrefConfig.instance(this);
 		config.getCfg();
 		mDevice = findSavedDevice(config);
+		ObdHandler = new OnObdHandler();
 		
-		ObdData = ObdInterface.CreateObdModule("Est527", new OnObdHandler());
+		ObdData = ObdInterface.CreateObdModule("Est527", ObdHandler);
 
 		if (mDevice != null)
 			connect(mDevice, mbtHandler, mListener);

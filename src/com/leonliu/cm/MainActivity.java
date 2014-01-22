@@ -1,5 +1,7 @@
 package com.leonliu.cm;
 
+import com.leonliu.cm.obd.ObdDao;
+
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Intent;
@@ -94,8 +96,39 @@ public class MainActivity extends Activity {
 		});
 		btSearch.setReadData(new MyInterface.OnReadDataListner() {
 			@Override
-			public void onReading(byte[] buffer, int len) {
-				outputText.getText().append(new String(buffer, 0, len) + System.getProperty("line.separator"));
+			public void onReading(byte[] buf, int len) {
+				
+			}
+
+			@Override
+			public void onReading(ObdDao data) {
+				StringBuffer sbuf = new StringBuffer();
+				sbuf.append(String.format("电瓶电压：%.2fv", data.getBat()) +
+						System.getProperty("line.separator"));
+				sbuf.append(String.format("发动机转速：%d", data.getRpm()) +
+						System.getProperty("line.separator"));
+				sbuf.append(String.format("行驶时速：%d", data.getVss()) +
+						System.getProperty("line.separator"));
+				sbuf.append(String.format("节气门开度：%.1f%%", data.getTp()) +
+						System.getProperty("line.separator"));
+				sbuf.append(String.format("发动机负荷：%.1f%%", data.getLod()) +
+						System.getProperty("line.separator"));
+				sbuf.append(String.format("冷却液温度：%dC", data.getEct()) +
+						System.getProperty("line.separator"));
+				sbuf.append(String.format("瞬时油耗：%.2fL", data.getMpg()) +
+						System.getProperty("line.separator"));
+				sbuf.append(String.format("平均油耗：%.2fL/100km", data.getAvm()) +
+						System.getProperty("line.separator"));
+				sbuf.append(String.format("本次行驶里程：%.2fkm", data.getDst()) +
+						System.getProperty("line.separator"));
+				sbuf.append(String.format("总里程：%.2fkm", data.getTDst()) +
+						System.getProperty("line.separator"));
+				sbuf.append(String.format("本次耗油量：%.2fL", data.getFue()) +
+						System.getProperty("line.separator"));
+				sbuf.append(String.format("累计耗油量：%.2fL", data.getTFue()) +
+						System.getProperty("line.separator"));
+				
+				outputText.setText(sbuf);
 			}
 		});
 		btSearch.StartBtService();

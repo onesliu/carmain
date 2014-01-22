@@ -14,8 +14,9 @@ public class Est527_Module implements FlowDataInteface {
 	private StringBuffer sBuf = new StringBuffer();
 	private ObdSendAdapter out = null;
 	private Handler msgHandler;
+	private boolean bStart = false;
 	
-	Est527_Module(OnObdData onData) {
+	public Est527_Module(OnObdData onData) {
 		onObdData = onData;
 	}
 	
@@ -23,10 +24,16 @@ public class Est527_Module implements FlowDataInteface {
 		if (handle.OnInput(cols, onObdData) == false) {
 			msgHandler.obtainMessage(ObdInterface.MSG_OBD_PARSEFAIL).sendToTarget();
 		}
+		else {
+			msgHandler.obtainMessage(ObdInterface.MSG_OBD_READ).sendToTarget();
+		}
 	}
 	
 	@Override
 	public void OnDataListener(byte[] data, int len) {
+		
+		if (bStart == false) return;
+		
 		sBuf.append(new String(data, 0, len));
 
 		ModuleHandle rhandle = Est527_Interfaces.CreateModuleHandle(Est527_Interfaces.OBD_REALTIME);
@@ -54,6 +61,7 @@ public class Est527_Module implements FlowDataInteface {
 	@Override
 	public void StartGetData(ObdSendAdapter out, Handler msgHandler) {
 		boolean ret = true;
+		bStart = true;
 		this.out = out;
 		this.msgHandler = msgHandler;
 		if (out != null) {
@@ -66,6 +74,7 @@ public class Est527_Module implements FlowDataInteface {
 
 	@Override
 	public void StopGetData() {
+		bStart = false;
 		if (out != null) {
 			out.SendData("ATSOFF\r\n");
 			out = null;
