@@ -7,6 +7,7 @@ import android.os.Handler;
 public class ObdInterface {
 	
 	public static final int MSG_OBD_SENDFAIL = 200;
+	public static final int MSG_OBD_PARSEFAIL = 201;
 	
 	public interface FlowDataInteface {
 		void OnDataListener(byte []data, int len);

@@ -12,7 +12,7 @@ public class Est527_Interfaces {
 	public static final String OBD_INFOMATION = "Infomation";
 	
 	public interface ModuleHandle {
-		void OnInput(String []colums, OnObdData onData);
+		boolean OnInput(String []colums, OnObdData onData);
 	}
 	
 	public static ModuleHandle CreateModuleHandle(String model) {

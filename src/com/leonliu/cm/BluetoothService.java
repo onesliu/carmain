@@ -38,7 +38,7 @@ public class BluetoothService extends Service{
 		
 		if (bthread != null) {
 			if (bthread.getstate() == BluetoothThread.STATE_CONNECTED) {
-				bthread.setHandler(btHandler, listner);
+				bthread.setHandler(threadHandler, listner);
 				return bthread;
 			}
 		}
@@ -50,7 +50,7 @@ public class BluetoothService extends Service{
 		mbtHandler = btHandler;
 		mListener = listner;
 		bthread = new BluetoothThread(device, threadHandler);
-		bthread.setHandler(btHandler, listner);
+		bthread.setHandler(threadHandler, listner);
 		bthread.start();
 		
 		return bthread;
@@ -113,7 +113,11 @@ public class BluetoothService extends Service{
 				else {
 					ObdData.StopGetData();
 				}
-				break;
+				//break;
+			default:
+				if (mbtHandler != null) {
+					mbtHandler.sendMessage(msg);
+				}
 			}
 			super.handleMessage(msg);
 		}
@@ -127,6 +131,11 @@ public class BluetoothService extends Service{
 				Log.i(this.getClass().getSimpleName(), "Obd data get error, BT thread will stop.");
 				ObdData.StopGetData();
 				closeBthread();
+				break;
+			case ObdInterface.MSG_OBD_PARSEFAIL:
+				if (mbtHandler != null) {
+					mbtHandler.sendMessage(msg);
+				}
 				break;
 			}
 		}

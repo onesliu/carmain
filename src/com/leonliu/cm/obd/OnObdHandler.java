@@ -27,62 +27,52 @@ public class OnObdHandler implements OnObdData {
 
 	@Override
 	public void OnTp(double tp) {
-		// TODO Auto-generated method stub
-		
+		dao.setTp(tp);
 	}
 
 	@Override
 	public void OnLod(double lod) {
-		// TODO Auto-generated method stub
-		
+		dao.setLod(lod);
 	}
 
 	@Override
 	public void OnEct(int ect) {
-		// TODO Auto-generated method stub
-		
+		dao.setEct(ect);
 	}
 
 	@Override
 	public void OnMpg(double mpg) {
-		// TODO Auto-generated method stub
-		
+		dao.setMpg(mpg);
 	}
 
 	@Override
 	public void OnAvm(double avm) {
-		// TODO Auto-generated method stub
-		
+		dao.setAvm(avm);
 	}
 
 	@Override
 	public void OnDiagnosis(String[] codes) {
-		// TODO Auto-generated method stub
-		
+		dao.setCodes(codes);
 	}
 
 	@Override
 	public void OnDst(double distance) {
-		// TODO Auto-generated method stub
-		
+		dao.setDst(distance);
 	}
 
 	@Override
 	public void OnTDst(double distance) {
-		// TODO Auto-generated method stub
-		
+		dao.setTDst(distance);
 	}
 
 	@Override
 	public void OnFue(double liter) {
-		// TODO Auto-generated method stub
-		
+		dao.setFue(liter);
 	}
 
 	@Override
 	public void OnTFue(double liter) {
-		// TODO Auto-generated method stub
-		
+		dao.setTFue(liter);
 	}
 
 }
