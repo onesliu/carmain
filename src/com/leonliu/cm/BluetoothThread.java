@@ -50,6 +50,7 @@ public class BluetoothThread extends Thread {
 		mAdapter = BluetoothAdapter.getDefaultAdapter();
 		sHandler = handler;
 		mmDevice = device;
+		setName(this.getClass().getSimpleName());
 	}
 	
 	public synchronized void setHandler(Handler handler, MyInterface.OnReadDataListner listner) {

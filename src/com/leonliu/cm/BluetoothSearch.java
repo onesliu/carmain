@@ -81,6 +81,8 @@ public class BluetoothSearch {
 	// call this method after enable bluetooth adapter, and start bluetooth service
 	public void StartBtService() {
 
+		InitBluetooth();
+
 		mAdapter = BluetoothAdapter.getDefaultAdapter();
 		if (mAdapter == null) {
 			AlertToast.showAlert(a, a.getString(R.string.err_nobluetooth));
@@ -88,7 +90,7 @@ public class BluetoothSearch {
 		}
 		
 		if (btService == null) {
-			InitBluetooth();
+			AlertToast.showAlert(a, a.getString(R.string.err_btservicestop));
 			return;
 		}
 
@@ -120,6 +122,9 @@ public class BluetoothSearch {
 	
 	// private methods
 	private void InitBluetooth() {
+		
+		if (mRegisted) return;
+		
 		mDiscoveredDevice = new HashSet<BluetoothDevice>();
 		config = PrefConfig.instance(a);
 		config.getCfg();
