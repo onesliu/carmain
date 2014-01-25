@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TabHost xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/tabhost"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" >
+
+    <LinearLayout
+        android:id="@+id/linearLayout1"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical" >
+
+        <FrameLayout
+            android:id="@android:id/tabcontent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" >
+        </FrameLayout>
+
+        <TabWidget
+            android:id="@android:id/tabs"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone" >
+        </TabWidget>
+        
+        <LinearLayout
+            android:id="@+id/main_tab_group"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:gravity="bottom"
+            android:background="@color/main_index_bg"
+            android:orientation="horizontal" >
+
+            <FrameLayout
+                android:id="@+id/FrameLayout_tab_1"
+                android:layout_width="0.0dip"
+                android:layout_height="fill_parent"
+                android:layout_weight="1.0"
+                >
+
+                <LinearLayout
+                    android:layout_width="fill_parent"
+                    android:layout_height="fill_parent"
+                    android:orientation="vertical"
+                    android:gravity="bottom|center"
+                    android:paddingTop="5dip"
+                    android:paddingBottom="5dip" >
+
+                    <ImageView
+                        android:id="@+id/ImageView_tab_1"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@drawable/main_index_1_normal" />
+                    <TextView 
+                        android:id="@+id/TextView_tab_1"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/main_index_1"
+                        android:textColor="@color/main_index_text"
+                         />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="fill_parent"
+                    android:layout_height="fill_parent"
+                    android:gravity="top|right|center"
+                    android:paddingRight="13dip" >
+
+                    <TextView
+                        android:id="@+id/TextView_tab_1_remind"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:gravity="center"
+                        android:text="2"
+                        android:textColor="#ff0000"
+                        android:textSize="10dp"
+                        android:visibility="invisible" />
+                </LinearLayout>
+            </FrameLayout>
+            
+            <FrameLayout
+                android:id="@+id/FrameLayout_tab_2"
+                android:layout_width="0.0dip"
+                android:layout_height="fill_parent"
+                android:layout_weight="1.0"
+                 >
+
+                <LinearLayout
+                    android:layout_width="fill_parent"
+                    android:layout_height="fill_parent"
+                    android:orientation="vertical"
+                    android:gravity="bottom|center"
+                    android:paddingTop="5dip"
+                    android:paddingBottom="5dip" >
+
+                    <ImageView
+                        android:id="@+id/ImageView_tab_2"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@drawable/main_index_2_normal" />
+                    <TextView 
+                        android:id="@+id/TextView_tab_2"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/main_index_2"
+                        android:textColor="@color/main_index_text"
+                         />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/LinearLayout_tab_2"
+                    android:layout_width="fill_parent"
+                    android:layout_height="fill_parent"
+                    android:gravity="top|right|center"
+                    android:paddingRight="13dip" >
+
+                    <TextView
+                        android:id="@+id/TextView_tab_2_remind"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:gravity="center"
+                        android:text="3"
+                        android:textColor="#ff0000"
+                        android:textSize="10dip"
+                        android:visibility="invisible" />
+                </LinearLayout>
+            </FrameLayout>
+            
+            <FrameLayout
+                android:id="@+id/FrameLayout_tab_3"
+                android:layout_width="0.0dip"
+                android:layout_height="fill_parent"
+                android:layout_weight="1.0"
+                 >
+                
+                <LinearLayout
+                    android:layout_width="fill_parent"
+                    android:layout_height="fill_parent"
+                    android:orientation="vertical"
+                    android:gravity="bottom|center"
+                    android:paddingTop="5dip"
+                    android:paddingBottom="5dip" >
+
+                    <ImageView
+                        android:id="@+id/ImageView_tab_3"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@drawable/main_index_3_normal" />
+                    <TextView 
+                        android:id="@+id/TextView_tab_3"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/main_index_3"
+                        android:textColor="@color/main_index_text"
+                         />
+                </LinearLayout>
+
+            </FrameLayout>
+            
+            <FrameLayout
+                android:id="@+id/FrameLayout_tab_4"
+                android:layout_width="0.0dip"
+                android:layout_height="fill_parent"
+                android:layout_weight="1.0"
+                >
+                
+                <LinearLayout
+                    android:layout_width="fill_parent"
+                    android:layout_height="fill_parent"
+                    android:orientation="vertical"
+                    android:gravity="bottom|center"
+                    android:paddingTop="5dip"
+                    android:paddingBottom="5dip" >
+
+                    <ImageView
+                        android:id="@+id/ImageView_tab_4"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@drawable/main_index_4_normal" />
+                    <TextView 
+                        android:id="@+id/TextView_tab_4"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/main_index_4"
+                        android:textColor="@color/main_index_text"
+                         />
+                </LinearLayout>
+ 
+                <LinearLayout
+                    android:id="@+id/LinearLayout_tab_4"
+                    android:layout_width="fill_parent"
+                    android:layout_height="fill_parent"
+                    android:gravity="top|right|center"
+                    android:paddingRight="13dip" >
+
+                    <TextView
+                        android:id="@+id/TextView_tab_4_remind"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:gravity="center"
+                        android:text="99"
+                        android:textColor="#ff0000"
+                        android:textSize="10dip"
+                        android:visibility="invisible" />
+                </LinearLayout>
+            </FrameLayout>
+
+            <FrameLayout
+                android:id="@+id/FrameLayout_tab_5"
+                android:layout_width="0.0dip"
+                android:layout_height="fill_parent"
+                android:layout_weight="1.0"
+                >
+                
+                <LinearLayout
+                    android:layout_width="fill_parent"
+                    android:layout_height="fill_parent"
+                    android:orientation="vertical"
+                    android:gravity="bottom|center"
+                    android:paddingTop="5dip"
+                    android:paddingBottom="5dip" >
+
+                    <ImageView
+                        android:id="@+id/ImageView_tab_5"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@drawable/main_index_5_normal" />
+                    <TextView 
+                        android:id="@+id/TextView_tab_5"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/main_index_5"
+                        android:textColor="@color/main_index_text"
+                         />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="fill_parent"
+                    android:layout_height="fill_parent"
+                    android:gravity="top|right|center"
+                    android:paddingRight="13dip" >
+
+                    <TextView
+                        android:id="@+id/TextView_tab_5_remind"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:gravity="center"
+                        android:text="2"
+                        android:textColor="#ff0000"
+                        android:textSize="10dip"
+                        android:visibility="invisible" />
+                </LinearLayout>
+            </FrameLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+</TabHost>

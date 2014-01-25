@@ -25,14 +25,16 @@ public class ObdModule implements FlowDataInteface {
 
 	@Override
 	public void StartGetData(ObdSendAdapter out, Handler msgHandler) {
-		// TODO Auto-generated method stub
-
+		bStart = true;
+		this.out = out;
+		this.msgHandler = msgHandler;
 	}
 
 	@Override
 	public void StopGetData() {
-		// TODO Auto-generated method stub
-
+		out = null;
+		msgHandler = null;
+		bStart = false;
 	}
 
 }

@@ -18,7 +18,7 @@ public class ObdInterface {
 	}
 	
 	public interface ObdSendAdapter {
-		boolean SendData(String buf);
+		boolean SendData(byte []buf);
 	}
 	
 	public interface OnObdData {

@@ -90,7 +90,7 @@ public class BluetoothSearch {
 		}
 		
 		if (btService == null) {
-			AlertToast.showAlert(a, a.getString(R.string.err_btservicestop));
+			//AlertToast.showAlert(a, a.getString(R.string.err_btservicestop));
 			return;
 		}
 
@@ -257,6 +257,12 @@ public class BluetoothSearch {
 			case ObdInterface.MSG_OBD_READ:
 				if (w.get().readData != null)
 					w.get().readData.onReading((ObdDao) msg.obj);
+				break;
+			case BluetoothThread.MESSAGE_READ:
+				if (w.get().readData != null) {
+					byte[] data = (byte[]) msg.obj;
+					w.get().readData.onReading(data, msg.arg1);
+				}
 				break;
 			case ObdInterface.MSG_OBD_PARSEFAIL:
 				AlertToast.showAlert(w.get().a, "解析出错");

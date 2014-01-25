@@ -11,21 +11,27 @@
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    
+
     <application
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
         <activity
-            android:name="com.leonliu.cm.MainActivity"
-            android:label="@string/app_name" >
+            android:name="com.leonliu.cm.MyTabHost"
+            android:theme="@android:style/Theme.Light.NoTitleBar.Fullscreen" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name="com.leonliu.cm.VechicleStatus" />
+        <activity android:name="com.leonliu.cm.CarProducts" />
+        <activity android:name="com.leonliu.cm.CarRepairShops" />
+        <activity android:name="com.leonliu.cm.MyVechicle" />
+        <activity android:name="com.leonliu.cm.MoreActivity" />
+        <activity android:name="com.leonliu.cm.MainActivity" />
 
         <receiver
             android:name="com.leonliu.cm.BootBroadcast"

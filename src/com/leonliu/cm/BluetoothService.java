@@ -114,13 +114,14 @@ public class BluetoothService extends Service{
 				break;
 			case BluetoothThread.MESSAGE_READ:
 				ObdData.OnDataListener((byte[])msg.obj, msg.arg1);
+				ReSendMsg(msg, msg.obj);
 				break;
 			case BluetoothThread.MESSAGE_STATE_CHANGE:
 				if (msg.arg1 == BluetoothThread.STATE_CONNECTED) {
 					ObdData.StartGetData(new ObdSendAdapter() {
 						@Override
-						public boolean SendData(String buf) {
-							return write(buf.getBytes());
+						public boolean SendData(byte[] buf) {
+							return write(buf);
 						}
 					}, ObdMsg);
 				}
@@ -173,7 +174,7 @@ public class BluetoothService extends Service{
 		mDevice = findSavedDevice(config);
 		ObdHandler = new OnObdHandler();
 		
-		ObdData = ObdInterface.CreateObdModule("Est527", ObdHandler);
+		ObdData = ObdInterface.CreateObdModule("Elm327", ObdHandler);
 
 		if (mDevice != null)
 			connect(mDevice, mbtHandler, mListener);

@@ -3,23 +3,19 @@ package com.leonliu.cm.obd.Est527;
 import android.os.Handler;
 
 import com.leonliu.cm.obd.ObdInterface;
-import com.leonliu.cm.obd.ObdInterface.FlowDataInteface;
 import com.leonliu.cm.obd.ObdInterface.ObdSendAdapter;
 import com.leonliu.cm.obd.ObdInterface.OnObdData;
+import com.leonliu.cm.obd.ObdModule;
 import com.leonliu.cm.obd.Est527.Est527_Interfaces.ModuleHandle;
 
-public class Est527_Module implements FlowDataInteface {
+public class Est527_Module extends ObdModule {
 
-	private final OnObdData onObdData;
 	private StringBuffer sBuf = new StringBuffer();
-	private ObdSendAdapter out = null;
-	private Handler msgHandler;
-	private boolean bStart = false;
 	
 	public Est527_Module(OnObdData onData) {
-		onObdData = onData;
+		super(onData);
 	}
-	
+
 	private void parseLine(ModuleHandle handle, String []cols) {
 		if (handle.OnInput(cols, onObdData) == false) {
 			msgHandler.obtainMessage(ObdInterface.MSG_OBD_PARSEFAIL).sendToTarget();
@@ -60,12 +56,10 @@ public class Est527_Module implements FlowDataInteface {
 
 	@Override
 	public void StartGetData(ObdSendAdapter out, Handler msgHandler) {
+		super.StartGetData(out, msgHandler);
 		boolean ret = true;
-		bStart = true;
-		this.out = out;
-		this.msgHandler = msgHandler;
 		if (out != null) {
-			ret = out.SendData("ATSON\r\n");
+			ret = out.SendData("ATSON\r\n".getBytes());
 		}
 		if (ret == false) {
 			msgHandler.obtainMessage(ObdInterface.MSG_OBD_SENDFAIL).sendToTarget();
@@ -74,12 +68,11 @@ public class Est527_Module implements FlowDataInteface {
 
 	@Override
 	public void StopGetData() {
-		bStart = false;
 		if (out != null) {
-			out.SendData("ATSOFF\r\n");
+			out.SendData("ATSOFF\r\n".getBytes());
 			out = null;
 		}
-		msgHandler = null;
+		super.StopGetData();
 	}
 	
 }

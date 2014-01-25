@@ -1,6 +1,7 @@
 package com.leonliu.cm;
 
 import com.leonliu.cm.obd.ObdDao;
+import com.leonliu.cm.utils.MyUtils;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
@@ -97,7 +98,7 @@ public class MainActivity extends Activity {
 		btSearch.setReadData(new MyInterface.OnReadDataListner() {
 			@Override
 			public void onReading(byte[] buf, int len) {
-				
+				outputText.getText().append(MyUtils.hexToStr(buf) + "\n");
 			}
 
 			@Override
