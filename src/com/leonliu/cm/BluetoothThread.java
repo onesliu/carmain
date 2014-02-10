@@ -150,6 +150,23 @@ public class BluetoothThread extends Thread {
 		mmSocket = null;
 	}
 	
+	static int waitcount = 0;
+	static int lasterror = MESSAGE_CONNECTION_FAIL;
+	private int getWaittime(int error) {
+		int ret = 5;
+		if (error == lasterror) {
+			if (waitcount < 5) 
+				waitcount++;
+			else
+				ret = 30;
+		}
+		else {
+			waitcount = 0;
+		}
+		lasterror = error;
+		return ret;
+	}
+	
 	@Override
 	public void run() {
 
@@ -178,7 +195,7 @@ public class BluetoothThread extends Thread {
 			} catch (Exception e) {
 				Log.e(this.getClass().getSimpleName(), "mmSocket gotten from device Exception.");
 				setstate(STATE_NONE);
-				waittime = 30;
+				waittime = getWaittime(MESSAGE_CONNECTION_FAIL);
 				handlerSendMsg(MESSAGE_CONNECTION_FAIL, 0, 0, null);
 				continue;
 			}
@@ -194,7 +211,7 @@ public class BluetoothThread extends Thread {
 			} catch (Exception e) {
 				Log.e(this.getClass().getSimpleName(), "mmSocket connect Exception.");
 				setstate(STATE_NONE);
-				waittime = 30;
+				waittime = getWaittime(MESSAGE_CONNECTION_FAIL);
 				handlerSendMsg(MESSAGE_CONNECTION_FAIL, 0, 0, null);
 				continue;
 			}
@@ -207,7 +224,7 @@ public class BluetoothThread extends Thread {
 			} catch (Exception e) {
 				Log.e(this.getClass().getSimpleName(), "mmSocket get stream Exception.");
 				setstate(STATE_NONE);
-				waittime = 30;
+				waittime = getWaittime(MESSAGE_CONNECTION_LOST);
 				handlerSendMsg(MESSAGE_CONNECTION_LOST, 0, 0, null);
 				continue;
 			}
@@ -235,7 +252,7 @@ public class BluetoothThread extends Thread {
 				} catch (Exception e) {
 					Log.e(this.getClass().getSimpleName(), "mmSocket read stream Exception.");
 					setstate(STATE_NONE);
-					waittime = 5;
+					waittime = getWaittime(MESSAGE_CONNECTION_LOST);
 					handlerSendMsg(MESSAGE_CONNECTION_LOST, 0, 0, null);
 					break;
 				}

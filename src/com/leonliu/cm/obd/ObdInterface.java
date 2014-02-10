@@ -10,6 +10,7 @@ public class ObdInterface {
 	public static final int MSG_OBD_SENDFAIL = 200;
 	public static final int MSG_OBD_PARSEFAIL = 201;
 	public static final int MSG_OBD_READ = 202;
+	public static final int MSG_OBD_INFO = 203;
 	
 	public interface FlowDataInteface {
 		void OnDataListener(byte []data, int len);
@@ -18,7 +19,7 @@ public class ObdInterface {
 	}
 	
 	public interface ObdSendAdapter {
-		boolean SendData(byte []buf);
+		boolean SendData(String buf);
 	}
 	
 	public interface OnObdData {
@@ -40,6 +41,9 @@ public class ObdInterface {
 		
 		// Diagnosis Data
 		void OnDiagnosis(String []codes);
+		
+		// Info
+		void OnModuleName(String name);
 	}
 	
 	public static FlowDataInteface CreateObdModule(String model, OnObdData ObdData) {

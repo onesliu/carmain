@@ -68,6 +68,16 @@ public class MyUtils {
 		return str;
 	}
 	
+	public static final byte[] strToHex(String str) {
+		if (str.length()%2 != 0) return null;
+		byte []b = new byte[str.length()/2];
+		str += '0';
+		for(int i = 0; i < b.length; i++) {
+			b[i] = Byte.parseByte(str.substring(i*2, i*2+2));
+		}
+		return b;
+	}
+	
 	 /** * 根据手机的分辨率从 dp 的单位 转成为 px(像素) */
 	 
     public static int dip2px(Context context, float dpValue) {

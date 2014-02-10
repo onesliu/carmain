@@ -10,10 +10,13 @@ import com.leonliu.cm.obd.Est527.Est527_Interfaces.ModuleHandle;
 
 public class Est527_Module extends ObdModule {
 
-	private StringBuffer sBuf = new StringBuffer();
+	ModuleHandle rhandle;
+	ModuleHandle shandle;
 	
 	public Est527_Module(OnObdData onData) {
 		super(onData);
+		rhandle = Est527_Interfaces.CreateModuleHandle(Est527_Interfaces.OBD_REALTIME);
+		shandle = Est527_Interfaces.CreateModuleHandle(Est527_Interfaces.OBD_STATISTIC);
 	}
 
 	private void parseLine(ModuleHandle handle, String []cols) {
@@ -32,9 +35,6 @@ public class Est527_Module extends ObdModule {
 		
 		sBuf.append(new String(data, 0, len));
 
-		ModuleHandle rhandle = Est527_Interfaces.CreateModuleHandle(Est527_Interfaces.OBD_REALTIME);
-		ModuleHandle shandle = Est527_Interfaces.CreateModuleHandle(Est527_Interfaces.OBD_STATISTIC);
-		
 		int lineEnd = sBuf.indexOf("\r\n");
 		while (lineEnd != -1) {
 			String line = sBuf.substring(0, lineEnd);
@@ -59,7 +59,7 @@ public class Est527_Module extends ObdModule {
 		super.StartGetData(out, msgHandler);
 		boolean ret = true;
 		if (out != null) {
-			ret = out.SendData("ATSON\r\n".getBytes());
+			ret = out.SendData("ATSON\r\n");
 		}
 		if (ret == false) {
 			msgHandler.obtainMessage(ObdInterface.MSG_OBD_SENDFAIL).sendToTarget();
@@ -69,7 +69,7 @@ public class Est527_Module extends ObdModule {
 	@Override
 	public void StopGetData() {
 		if (out != null) {
-			out.SendData("ATSOFF\r\n".getBytes());
+			out.SendData("ATSOFF\r\n");
 			out = null;
 		}
 		super.StopGetData();

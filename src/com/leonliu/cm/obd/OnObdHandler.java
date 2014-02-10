@@ -62,7 +62,11 @@ public class OnObdHandler implements OnObdData {
 
 	@Override
 	public void OnTDst(double distance) {
-		dao.setTDst(distance);
+		dao.setTDst(distance + prev_dist);
+	}
+	private double prev_dist = 0;
+	public void SetPrevTDst(double dist) {
+		prev_dist = dist;
 	}
 
 	@Override
@@ -73,6 +77,11 @@ public class OnObdHandler implements OnObdData {
 	@Override
 	public void OnTFue(double liter) {
 		dao.setTFue(liter);
+	}
+
+	@Override
+	public void OnModuleName(String name) {
+		dao.setModuleName(name);
 	}
 
 }

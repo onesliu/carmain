@@ -20,6 +20,7 @@ import com.leonliu.cm.obd.ObdDao;
 import com.leonliu.cm.obd.ObdInterface;
 import com.leonliu.cm.obd.ObdInterface.FlowDataInteface;
 import com.leonliu.cm.obd.ObdInterface.ObdSendAdapter;
+import com.leonliu.cm.obd.ObdModuleInfo;
 import com.leonliu.cm.obd.OnObdHandler;
 
 @SuppressLint("HandlerLeak")
@@ -103,6 +104,13 @@ public class BluetoothService extends Service{
 		}
 	}
 	
+	private ObdSendAdapter ObdAdapter = new ObdSendAdapter() {
+		@Override
+		public boolean SendData(String buf) {
+			return write(buf.getBytes());
+		}
+	};
+
 	//Handler
 	Handler threadHandler = new Handler() {
 		@Override
@@ -113,21 +121,20 @@ public class BluetoothService extends Service{
 				closeBthread();
 				break;
 			case BluetoothThread.MESSAGE_READ:
-				ObdData.OnDataListener((byte[])msg.obj, msg.arg1);
+				if (ObdData != null)
+					ObdData.OnDataListener((byte[])msg.obj, msg.arg1);
 				ReSendMsg(msg, msg.obj);
 				break;
 			case BluetoothThread.MESSAGE_STATE_CHANGE:
 				if (msg.arg1 == BluetoothThread.STATE_CONNECTED) {
-					ObdData.StartGetData(new ObdSendAdapter() {
-						@Override
-						public boolean SendData(byte[] buf) {
-							return write(buf);
-						}
-					}, ObdMsg);
+					if (ObdData != null)
+						ObdData.StartGetData(ObdAdapter, ObdMsg);
 				}
 				else {
-					ObdData.StopGetData();
+					if (ObdData != null)
+						ObdData.StopGetData();
 				}
+				ReSendMsg(msg, null);
 				break;
 			default:
 				ReSendMsg(msg, null);
@@ -142,7 +149,8 @@ public class BluetoothService extends Service{
 			switch (msg.what) {
 			case ObdInterface.MSG_OBD_SENDFAIL:
 				Log.i(this.getClass().getSimpleName(), "Obd data get error, BT thread will stop.");
-				ObdData.StopGetData();
+				if (ObdData != null)
+					ObdData.StopGetData();
 				closeBthread();
 				break;
 			case ObdInterface.MSG_OBD_PARSEFAIL:
@@ -152,6 +160,14 @@ public class BluetoothService extends Service{
 				break;
 			case ObdInterface.MSG_OBD_READ:
 				ReSendMsg(msg, ObdHandler.getDao());
+				break;
+			case ObdInterface.MSG_OBD_INFO:
+				if (ObdData != null) {
+					ObdData.StopGetData();
+					ObdData = ObdInterface.CreateObdModule(ObdHandler.getDao().getModuleName(), ObdHandler);
+					if (ObdData != null)
+						ObdData.StartGetData(ObdAdapter, ObdMsg);
+				}
 				break;
 			default:
 				ReSendMsg(msg, null);
@@ -174,7 +190,7 @@ public class BluetoothService extends Service{
 		mDevice = findSavedDevice(config);
 		ObdHandler = new OnObdHandler();
 		
-		ObdData = ObdInterface.CreateObdModule("Elm327", ObdHandler);
+		ObdData = new ObdModuleInfo(ObdHandler);
 
 		if (mDevice != null)
 			connect(mDevice, mbtHandler, mListener);

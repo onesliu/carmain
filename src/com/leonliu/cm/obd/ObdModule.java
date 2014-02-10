@@ -12,6 +12,7 @@ public class ObdModule implements FlowDataInteface {
 	protected ObdSendAdapter out = null;
 	protected Handler msgHandler;
 	protected boolean bStart = false;
+	protected StringBuffer sBuf;
 	
 	public ObdModule(OnObdData onData) {
 		onObdData = onData;
@@ -19,8 +20,6 @@ public class ObdModule implements FlowDataInteface {
 
 	@Override
 	public void OnDataListener(byte[] data, int len) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
@@ -28,6 +27,7 @@ public class ObdModule implements FlowDataInteface {
 		bStart = true;
 		this.out = out;
 		this.msgHandler = msgHandler;
+		sBuf = new StringBuffer();
 	}
 
 	@Override
@@ -35,6 +35,7 @@ public class ObdModule implements FlowDataInteface {
 		out = null;
 		msgHandler = null;
 		bStart = false;
+		sBuf = null;
 	}
 
 }

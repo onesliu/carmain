@@ -31,7 +31,7 @@
         <activity android:name="com.leonliu.cm.CarRepairShops" />
         <activity android:name="com.leonliu.cm.MyVechicle" />
         <activity android:name="com.leonliu.cm.MoreActivity" />
-        <activity android:name="com.leonliu.cm.MainActivity" />
+        <activity android:name="com.leonliu.cm.DebugActivity" />
 
         <receiver
             android:name="com.leonliu.cm.BootBroadcast"

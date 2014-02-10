@@ -1,9 +1,14 @@
 package com.leonliu.cm;
 
+import com.leonliu.cm.obd.ObdDao;
+import com.leonliu.cm.utils.MyUtils;
+
 import android.app.TabActivity;
+import android.bluetooth.BluetoothAdapter;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -30,16 +35,19 @@ public class MyTabHost extends TabActivity {
 	private TextView txts[] = new TextView[5];
 	public Handler SecurityLogHandler;
 
+	public static final int REQUEST_ENABLE_BT = 1;
+	private BluetoothSearch btSearch;
+
 	private void getViews() {
 
 		Intent intent_dev = new Intent();
 		Bundle bundle = new Bundle();
-		intent_dev.setClass(MyTabHost.this, VechicleStatus.class);
+		intent_dev.setClass(MyTabHost.this, MyVechicle.class);
 		intent_dev.putExtras(bundle);
 		
 		Intent intent_more = new Intent();
 		Bundle bundle_more = new Bundle();
-		intent_more.setClass(MyTabHost.this, MainActivity.class);
+		intent_more.setClass(MyTabHost.this, MoreActivity.class);
 		intent_more.putExtras(bundle_more);
 		
 		tabhost = (TabHost) findViewById(android.R.id.tabhost);
@@ -81,7 +89,7 @@ public class MyTabHost extends TabActivity {
 		tabhost.addTab(tabhost
 				.newTabSpec("tab4")
 				.setIndicator(getString(R.string.main_index_4))
-				.setContent(new Intent(this, MyVechicle.class)));
+				.setContent(new Intent(this, DebugActivity.class)));
 		tabhost.addTab(tabhost
 				.newTabSpec("tab5")
 				.setIndicator(getString(R.string.main_index_5))
@@ -146,22 +154,54 @@ public class MyTabHost extends TabActivity {
 		if (params == null || classname == null) {
 			tab_1.performClick();
 		} else {
-			if (classname.equals(VechicleStatus.class.getName())) {
+			if (classname.equals(MyVechicle.class.getName())) {
 				tab_1.performClick();
 			} else if (classname.equals(CarProducts.class.getName())) {
 				tab_2.performClick();
 			} else if (classname.equals(CarRepairShops.class.getName())) {
 				tab_3.performClick();
-			}else if (classname.equals(MyVechicle.class.getName())) {
+			}else if (classname.equals(DebugActivity.class.getName())) {
 				tab_4.performClick();
 			}else if (classname.equals(MoreActivity.class.getName())) {
 				tab_5.performClick();
 			}
 		}
+
 	}
 
 	public void onStart() {
+		Log.d(this.getClass().getSimpleName(), "Activity onStart.");
+		BluetoothAdapterEnable();
 		super.onStart();
+	}
+
+	@Override
+	protected void onStop() {
+		Log.d(this.getClass().getSimpleName(), "Activity onStop.");
+		BluetoothSearch.instance(this).UnbindBtService();
+		super.onStop();
+	}
+
+	@Override
+	public void onActivityResult(int requestCode, int resultCode, Intent data) {
+		Log.d(this.getClass().getSimpleName(), "Activity onActivityResult.");
+
+		if (resultCode == RESULT_CANCELED) return;
+		
+		if (requestCode == REQUEST_ENABLE_BT) {
+			btSearch.StartBtService();
+		}
+	}
+
+	private void BluetoothAdapterEnable() {
+		btSearch = BluetoothSearch.instance(this);
+		if (BluetoothAdapter.getDefaultAdapter().isEnabled() == false) {
+			Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+			startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+		}
+		else {
+			btSearch.StartBtService();
+		}
 	}
 
 }

@@ -5,8 +5,9 @@
     <color name="main_index_bg">#FF545454</color>
     <color name="main_index_text">#FFFFFFFF</color>
     <color name="main_index_text2">#FFFF7418</color>
-    <color name="title_lite">#7F024161</color>
-    <color name="button">#FFFFFFFF</color>
+    <color name="global_background">#fff5f5f5</color>
+    <color name="clwhite">#FFFFFFFF</color>
+    <color name="clblack_30">#90000000</color>
     <color name="switch_btn">#FF024161</color>
     <color name="footer">#FF0265A6</color>
     <color name="table_spliter">#FFBFDFEC</color>

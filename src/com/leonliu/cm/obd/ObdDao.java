@@ -2,22 +2,24 @@ package com.leonliu.cm.obd;
 
 public class ObdDao {
 
-	private double Bat;
-	private int rpm;
-	private int vss;
-	private double tp;
-	private double lod;
-	private int ect;
-	private double mpg;
-	private double avm;
+	private double Bat;	//电瓶电压
+	private int rpm;		//发动机转速
+	private int vss;		//行驶时速
+	private double tp;		//节气门开度
+	private double lod;	//发动机负荷
+	private int ect;		//冷却液温度
+	private double mpg;	//瞬时油耗
+	private double avm;	//平均油耗
 
-	private double Dst;
-	private double TDst;
-	private double Fue;
-	private double TFue;
+	private double Dst;	//本次行驶里程
+	private double TDst;	//总里程
+	private double Fue;	//本次耗油量
+	private double TFue;	//累计耗油量
 
 	private String []codes;
 
+	private String ModuleName;
+	
 	public synchronized double getBat() {
 		return Bat;
 	}
@@ -120,6 +122,14 @@ public class ObdDao {
 
 	public synchronized void setCodes(String[] codes) {
 		this.codes = codes;
+	}
+
+	public synchronized String getModuleName() {
+		return ModuleName;
+	}
+
+	public synchronized void setModuleName(String moduleName) {
+		ModuleName = moduleName;
 	}
 
 }
